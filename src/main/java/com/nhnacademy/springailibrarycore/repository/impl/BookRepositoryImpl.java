@@ -1,10 +1,11 @@
 package com.nhnacademy.springailibrarycore.repository.impl;
 
-import com.nhnacademy.library.core.book.dto.BookSearchRequest;
-import com.nhnacademy.library.core.book.dto.BookSearchResponse;
-import com.nhnacademy.library.core.book.repository.BookRepositoryCustom;
-import com.nhnacademy.library.core.book.repository.search.KeywordBookSearchRepository;
-import com.nhnacademy.library.core.book.repository.search.VectorBookSearchRepository;
+
+import com.nhnacademy.springailibrarycore.dto.BookSearchRequest;
+import com.nhnacademy.springailibrarycore.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.repository.BookRepositoryCustom;
+import com.nhnacademy.springailibrarycore.repository.impl.search.KeywordBookSearchRepository;
+import com.nhnacademy.springailibrarycore.repository.impl.search.VectorBookSearchRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

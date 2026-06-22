@@ -1,8 +1,8 @@
 package com.nhnacademy.springailibrarycore.strategy;
 
-import com.nhnacademy.library.core.book.domain.SearchType;
-import com.nhnacademy.library.core.book.dto.BookSearchRequest;
-import com.nhnacademy.library.core.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.domain.SearchType;
+import com.nhnacademy.springailibrarycore.dto.BookSearchRequest;
+import com.nhnacademy.springailibrarycore.dto.BookSearchResponse;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
