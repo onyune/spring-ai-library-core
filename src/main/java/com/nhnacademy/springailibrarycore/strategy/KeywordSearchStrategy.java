@@ -1,9 +1,9 @@
 package com.nhnacademy.springailibrarycore.strategy;
 
-import com.nhnacademy.library.core.book.domain.SearchType;
-import com.nhnacademy.library.core.book.dto.BookSearchRequest;
-import com.nhnacademy.library.core.book.dto.BookSearchResponse;
-import com.nhnacademy.library.core.book.repository.BookRepository;
+import com.nhnacademy.springailibrarycore.domain.SearchType;
+import com.nhnacademy.springailibrarycore.dto.BookSearchRequest;
+import com.nhnacademy.springailibrarycore.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.repository.BookRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

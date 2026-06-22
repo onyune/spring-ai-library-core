@@ -1,6 +1,6 @@
 package com.nhnacademy.springailibrarycore.repository;
 
-import com.nhnacademy.library.core.book.domain.Book;
+import com.nhnacademy.springailibrarycore.domain.Book;
 import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

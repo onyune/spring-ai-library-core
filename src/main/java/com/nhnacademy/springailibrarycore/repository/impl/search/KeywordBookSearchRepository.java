@@ -1,8 +1,8 @@
 package com.nhnacademy.springailibrarycore.repository.impl.search;
 
-import com.nhnacademy.library.core.book.domain.QBook;
-import com.nhnacademy.library.core.book.dto.BookSearchRequest;
-import com.nhnacademy.library.core.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.domain.QBook;
+import com.nhnacademy.springailibrarycore.dto.BookSearchRequest;
+import com.nhnacademy.springailibrarycore.dto.BookSearchResponse;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
@@ -68,6 +68,7 @@ public class KeywordBookSearchRepository {
 
         return new PageImpl<>(content, pageable, total == null ? 0 : total);
     }
+
     // 검색어에 대한 관련도 순서 결정 -> 점수
     private NumberExpression<Integer> createRelevanceScore(String keyword) {
         // 제목 점수
@@ -100,6 +101,7 @@ public class KeywordBookSearchRepository {
                 .add(publisherScore)
                 .add(contentScore);
     }
+
     // 검색 포함 여부
     private BooleanBuilder createSearchCondition(BookSearchRequest request) {
         BooleanBuilder condition = new BooleanBuilder();

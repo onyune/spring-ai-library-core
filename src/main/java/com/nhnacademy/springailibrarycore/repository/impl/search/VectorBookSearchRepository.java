@@ -1,7 +1,7 @@
 package com.nhnacademy.springailibrarycore.repository.impl.search;
 
-import com.nhnacademy.library.core.book.domain.QBook;
-import com.nhnacademy.library.core.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.domain.QBook;
+import com.nhnacademy.springailibrarycore.dto.BookSearchResponse;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberTemplate;
