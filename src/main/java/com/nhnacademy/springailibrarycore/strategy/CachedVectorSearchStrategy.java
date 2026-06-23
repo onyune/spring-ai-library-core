@@ -26,10 +26,9 @@ import org.springframework.util.StringUtils;
  * Redis Vector Store를 캐시 레이어로 사용하고,
  * 캐시 미스 시 PostgreSQL(pgvector)을 조회하는 캐시형 벡터 검색 전략입니다.
  *
- * <ul>
- *   <li>Hit  : Redis에서 유사도 임계치 이상 결과를 즉시 반환</li>
- *   <li>Miss : PostgreSQL(pgvector) 조회 후 Redis에 저장하고 반환</li>
- * </ul>
+ * Hit  : Redis에서 유사도 임계치 이상 결과를 즉시 반환
+ * Miss : PostgreSQL(pgvector) 조회 후 Redis에 저장하고 반환
+ *
  */
 @Slf4j
 @Component
@@ -63,7 +62,8 @@ public class CachedVectorSearchStrategy implements SearchStrategy {
 
         log.info("[VectorCache] Redis 캐시 조회 - keyword: '{}'", keyword);
 
-        // 1. Redis 캐시 조회 (유사도 임계치 필터 적용)
+        // Redis 캐시 조회 (유사도 임계치 필터 적용)
+
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(keyword)
                 .topK(pageable.getPageSize())
@@ -72,7 +72,7 @@ public class CachedVectorSearchStrategy implements SearchStrategy {
 
         List<Document> cachedDocuments = redisVectorStore.similaritySearch(searchRequest);
 
-        // 2. Cache HIT
+        // Cache HIT
         if (cachedDocuments != null && !cachedDocuments.isEmpty()) {
             log.info("[VectorCache] Cache HIT - {}건 반환", cachedDocuments.size());
             List<BookSearchResponse> cacheResults = cachedDocuments.stream()
@@ -81,7 +81,7 @@ public class CachedVectorSearchStrategy implements SearchStrategy {
             return new PageImpl<>(cacheResults, pageable, cacheResults.size());
         }
 
-        // 3. Cache MISS -> PostgreSQL 조회
+        // Cache MISS -> PostgreSQL 조회
         log.info("[VectorCache] Cache MISS - PostgreSQL 조회");
         BookSearchRequest dbRequest = new BookSearchRequest(
                 keyword,
@@ -94,7 +94,7 @@ public class CachedVectorSearchStrategy implements SearchStrategy {
         Page<BookSearchResponse> dbPage = bookRepository.vectorSearch(pageable, dbRequest);
         List<BookSearchResponse> dbResults = dbPage.getContent();
 
-        // 4. 조회 결과를 Redis 캐시에 저장
+        // 조회 결과를 Redis 캐시에 저장
         if (!dbResults.isEmpty()) {
             log.info("[VectorCache] {}건을 Redis에 캐싱", dbResults.size());
             List<Document> documentsToCache = dbResults.stream()

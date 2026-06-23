@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 /**
  * Reciprocal Rank Fusion(RRF) 알고리즘으로 키워드 결과와 벡터 결과를 결합합니다.
  *
- * <p>RRF 점수 공식: score(d) = Σ 1 / (k + rank(d))
+ * RRF 점수 공식: score(d) = Σ 1 / (k + rank(d))
  * k = 60 (기본값, 상위 랭킹에 지나치게 높은 가중치가 쏠리는 것을 방지)
  */
 @Service

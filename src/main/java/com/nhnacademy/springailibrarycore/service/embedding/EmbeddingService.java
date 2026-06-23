@@ -1,12 +1,15 @@
 package com.nhnacademy.springailibrarycore.service.embedding;
 
+import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_EMBEDDING;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
  * 텍스트를 float[] 임베딩 벡터로 변환하는 서비스입니다.
- * Spring AI의 {@link EmbeddingModel}을 래핑합니다.
+ * Spring AI의 EmbeddingModel을 래핑합니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,7 @@ public class EmbeddingService {
      * @param text 임베딩할 텍스트
      * @return 임베딩 벡터
      */
+    @Cacheable(value = CACHE_EMBEDDING, key = "#text")
     public float[] getEmbedding(String text) {
         return embeddingModel.embed(text);
     }
