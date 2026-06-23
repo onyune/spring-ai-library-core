@@ -1,6 +1,6 @@
 package com.nhnacademy.springailibrarycore.config;
 
-import com.nhnacademy.springailibrarycore.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
 

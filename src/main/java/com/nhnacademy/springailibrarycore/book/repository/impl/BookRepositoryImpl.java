@@ -1,0 +1,36 @@
+package com.nhnacademy.springailibrarycore.book.repository.impl;
+
+
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.repository.BookRepositoryCustom;
+import com.nhnacademy.springailibrarycore.book.repository.impl.search.KeywordBookSearchRepository;
+import com.nhnacademy.springailibrarycore.book.repository.impl.search.VectorBookSearchRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+
+@Repository
+@RequiredArgsConstructor
+public class BookRepositoryImpl implements BookRepositoryCustom {
+
+    private final KeywordBookSearchRepository keywordSearchRepository;
+    private final VectorBookSearchRepository vectorSearchRepository;
+
+    @Override
+    public Page<BookSearchResponse> search(
+            Pageable pageable,
+            BookSearchRequest request
+    ) {
+        return keywordSearchRepository.search(pageable, request);
+    }
+
+    @Override
+    public Page<BookSearchResponse> vectorSearch(
+            Pageable pageable,
+            BookSearchRequest request
+    ) {
+        return vectorSearchRepository.search(pageable, request.vector());
+    }
+}
