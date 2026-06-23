@@ -1,10 +1,10 @@
 package com.nhnacademy.springailibrarycore.book.repository.impl.search;
 
-import com.nhnacademy.springailibrarycore.domain.QBook;
+import com.nhnacademy.springailibrarycore.book.domain.QBook;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.dto.QBookSearchResponse;
 import com.querydsl.core.BooleanBuilder;
-import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -17,6 +17,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
+/**
+ * QueryDSL 동적 쿼리 키워드 기반 도서 리스트 추출
+ */
 @Repository
 @RequiredArgsConstructor
 public class KeywordBookSearchRepository {
@@ -31,8 +34,7 @@ public class KeywordBookSearchRepository {
         BooleanBuilder condition = createSearchCondition(request);
 
         JPAQuery<BookSearchResponse> contentQuery = queryFactory
-                .select(Projections.constructor(
-                        BookSearchResponse.class,
+                .select(new QBookSearchResponse(
                         book.id,
                         book.isbn,
                         book.title,

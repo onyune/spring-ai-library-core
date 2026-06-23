@@ -3,7 +3,9 @@ package com.nhnacademy.springailibrarycore.book.strategy.impl;
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
+import com.nhnacademy.springailibrarycore.book.strategy.support.RrfBookReranker;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,12 +26,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class RagSearchStrategy implements SearchStrategy {
-
-    private static final int RETRIEVAL_K = 100;
-    private static final int RERANK_K = 5;
-    private static final double RRF_SCORE_THRESHOLD = 0.02;
-
-    private final HybridSearchStrategy hybridSearchStrategy;
+    private final RrfBookReranker rrfBookReranker;
+    private final EmbeddingSubAgent embeddingSubAgent;
 
     @Override
     public SearchType supports() {
@@ -41,43 +39,12 @@ public class RagSearchStrategy implements SearchStrategy {
             Pageable pageable,
             BookSearchRequest request
     ) {
-        Page<BookSearchResponse> retrievalResult =
-                hybridSearchStrategy.search(
-                        PageRequest.of(0, RETRIEVAL_K),
-                        request
-                );
+        String normalizedQuestion = request.keyword();
+        float[] questionVector = embeddingSubAgent.getEmbedding(normalizedQuestion);
 
-        List<BookSearchResponse> rankedBooks = retrievalResult.getContent()
-                .stream()
-                .filter(book -> book.rrfScore() != null)
-                .sorted(Comparator.comparing(
-                        BookSearchResponse::rrfScore
-                ).reversed())
-                .toList();
 
-        List<BookSearchResponse> topBooks = rankedBooks.stream()
-                .filter(book ->
-                        book.rrfScore() >= RRF_SCORE_THRESHOLD
-                )
-                .limit(RERANK_K)
-                .toList();
+        List<BookSearchResponse> responses = rrfBookReranker.reranker(request);
 
-        if (topBooks.isEmpty() && !rankedBooks.isEmpty()) {
-            topBooks = rankedBooks.stream()
-                    .limit(RERANK_K)
-                    .toList();
-            log.info(
-                    "[RAG Top-K] 임계값 통과 결과가 없어 상위 {}권을 fallback으로 사용",
-                    topBooks.size()
-            );
-        }
 
-        log.info(
-                "[RAG Top-K] Retrieval {}권 → Rerank {}권",
-                retrievalResult.getNumberOfElements(),
-                topBooks.size()
-        );
-
-        return new PageImpl<>(topBooks);
     }
 }

@@ -60,21 +60,22 @@ com.nhnacademy.library
  │   │   ├─ RecommendContext (Record - 추천 에이전트 데이터 교환용)
  │   │   └─ BookRecommendReason (Record - LLM 구조체 응답 파싱용)
  │   ├─ repository
- │   │   ├─ BookRepository (Spring Data JPA)
+ │   │   ├─ BookRepository (Spring Data JPA) O
  │   │   └─ search
- │   │       ├─ KeywordBookSearchRepository (QueryDSL 동적 쿼리)
- │   │       └─ VectorBookSearchRepository (pgvector 코사인 유사도 검색)
+ │   │       ├─ KeywordBookSearchRepository (QueryDSL 동적 쿼리) O
+ │   │       └─ VectorBookSearchRepository (pgvector 코사인 유사도 검색) O
  │   └─ service
  │       ├─ embedding
- │       │   └─ BookEmbeddingService (도서 소개글의 벡터 임베딩 추출)
+ │       │   └─ BookEmbeddingService (벡터 임베딩 추출) O
  │       ├─ search
- │       │   ├─ RrfFusionService (RRF 기반 순위 병합 연산)
+ │       │   ├─ RrfFusionService (RRF 기반 순위 병합 연산) O
  │       │   └─ strategy
- │       │       ├─ SearchStrategy (검색 전략 인터페이스)
- │       │       ├─ KeywordSearchStrategy (키워드 검색 전략)
- │       │       ├─ VectorSearchStrategy (벡터 검색 전략)
- │       │       ├─ HybridSearchStrategy (RRF 하이브리드 검색 전략)
- │       │       └─ RagSearchStrategy (RAG 추천 후보 도서 선별 전략)
+ │       │       ├─ SearchStrategy (검색 전략 인터페이스) O
+ │       │       ├─ KeywordSearchStrategy (키워드 검색 전략) O
+ │       │       ├─ VectorSearchStrategy (벡터 검색 전략) O
+ │       │       ├─ HybridSearchStrategy (RRF 하이브리드 검색 전략) O
+ │       │       └─ RagSearchStrategy (RAG 추천 후보 도서 선별 전략) 
+ │       │       └─ AutoSearchStrategy (Auto Keyword인지 RAG인지 추천 후보 도서 선별 전략) O
  │       └─ agent
  │           ├─ ChatAgent (챗 에이전트 - 사용자 메시지 분기 및 병렬 툴 제어)
  │           ├─ BookSearchAgent (도서 검색 에이전트 - AUTO 모드 분석 및 툴 호출)
