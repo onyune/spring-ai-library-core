@@ -57,6 +57,7 @@ public class HybridSearchStrategy implements SearchStrategy {
                 null,
                 request.warmUp()
         );
+
         List<BookSearchResponse> keywordResults =
                 bookRepository.search(candidatePage, keywordRequest).getContent();
 
