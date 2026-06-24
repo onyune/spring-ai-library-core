@@ -1,9 +1,9 @@
-package com.nhnacademy.springailibrarycore.book.service.embedding;
+package com.nhnacademy.springailibrarycore.book.service.agent.embedding;
 
 import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_EMBEDDING;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
@@ -12,11 +12,16 @@ import org.springframework.stereotype.Service;
  * Spring AI의 EmbeddingModel을 래핑합니다.
  */
 @Service
-@RequiredArgsConstructor
-public class EmbeddingService {
+public class EmbeddingSubAgent {
 
     private final EmbeddingModel embeddingModel;
 
+    public EmbeddingSubAgent(
+            @Qualifier("openAiEmbeddingModel")
+            EmbeddingModel embeddingModel
+    ) {
+        this.embeddingModel = embeddingModel;
+    }
     /**
      * 주어진 텍스트를 임베딩하여 float[] 벡터를 반환합니다.
      *
