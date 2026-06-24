@@ -1,4 +1,4 @@
-package com.nhnacademy.springailibrarycore.book.service;
+package com.nhnacademy.springailibrarycore.agent;
 
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
@@ -26,11 +26,11 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
-public class BookSearchService {
+public class BookSearchAgent {
     private final Map<SearchType, SearchStrategy> strategyMap;
     private final AutoSearchAgent autoSearchAgent;
 
-    public BookSearchService(List<SearchStrategy> strategies, AutoSearchAgent autoSearchAgent) {
+    public BookSearchAgent(List<SearchStrategy> strategies, AutoSearchAgent autoSearchAgent) {
         this.strategyMap = strategies.stream()
                 .collect(Collectors.toMap(
                         SearchStrategy::supports, //Key: Enum 타입

@@ -17,6 +17,9 @@ import org.springframework.stereotype.Service;
 /**
  * 리뷰 요약 Agent들 조율
  * ReviewMapAgent와 ReviewReduceAgent들을 적절히 조율
+ * 캐시된 리뷰와
+ * 캐시된 리뷰에 있는 마지막 요약 리뷰아이디 이후의 리뷰들을 요약하여
+ * 합산 후 리턴
  *
  */
 @Service

@@ -1,8 +1,7 @@
-package com.nhnacademy.springailibrarycore.book.controller;
+package com.nhnacademy.springailibrarycore.front.controller;
 
 import com.nhnacademy.springailibrarycore.book.dto.BookDetailResponse;
 import com.nhnacademy.springailibrarycore.book.service.BookService;
-import com.nhnacademy.springailibrarycore.review.dto.ReviewSummaryResponse;
 import com.nhnacademy.springailibrarycore.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +38,8 @@ public class BookController {
     ) {
         log.info("[BookController] 도서 상세 조회 요청: {}, page: {}", id, pageable.getPageNumber());
         BookDetailResponse bookDetail = bookService.getBookDetail(id, pageable);
-        ReviewSummaryResponse reviewSummary = reviewService.getCachedSummary(id);
 
         model.addAttribute("bookDetail", bookDetail);
-        model.addAttribute("reviewSummary", reviewSummary);
 
         return "/book-detail";
     }

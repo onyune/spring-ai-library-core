@@ -1,10 +1,9 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.recommendation;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.nhnacademy.springailibrarycore.agent.ReviewCoordinator;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.ai.BookRecommendation;
 import com.nhnacademy.springailibrarycore.book.dto.ai.RecommendationResult;
+import com.nhnacademy.springailibrarycore.review.service.ReviewService;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -15,24 +14,25 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 /**
- * RRF Rerank로 선별된 상위 도서 목록에 AI 추천 사유(aiComment)와
- * 연관성 점수(relevance)를 부여하는 에이전트입니다.
- *
+ * RRF Rerank로 선별된 상위 도서 목록에 AI 추천 사유(aiComment)와 연관성 점수(relevance)를 부여하는 에이전트입니다.
+ * <p>
  * Gemini ChatClient를 사용하며, AI 호출 실패 시 원본 목록을 그대로 반환합니다(Fallback).
  */
 @Slf4j
 @Service
 public class BookRecommendationAgent {
 
-    /** AI에 전달할 bookContent 최대 길이 (토큰 절약) */
+    /**
+     * AI에 전달할 bookContent 최대 길이 (토큰 절약)
+     */
     private static final int MAX_CONTENT_LENGTH = 200;
 
     private final ChatClient chatClient;
-    private final ReviewCoordinator reviewCoordinator;
+    private final ReviewService reviewService;
 
     public BookRecommendationAgent(
             @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
-            ReviewCoordinator reviewCoordinator
+            ReviewService reviewService
     ) {
         String systemPrompt = """
                 너는 도서관 큐레이터야.
@@ -46,7 +46,7 @@ public class BookRecommendationAgent {
                 - aiComment는 반드시 한국어로 작성해.
                 - relevance가 낮아도 이유는 성실히 작성해.
                 """;
-        this.reviewCoordinator = reviewCoordinator;
+        this.reviewService = reviewService;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt)
                 .build();
@@ -109,34 +109,31 @@ public class BookRecommendationAgent {
     }
 
     /**
-     * AI에 전달할 User 프롬프트를 구성합니다.
-     * bookContent가 없는 도서는 제목/저자/출판사만으로 구성합니다.
+     * AI에 전달할 User 프롬프트를 구성합니다. bookContent가 없는 도서는 제목/저자/출판사만으로 구성합니다.
      */
     private String buildUserPrompt(String question, List<BookSearchResponse> books) {
         StringBuilder sb = new StringBuilder();
         sb.append("질문: \"").append(question).append("\"\n\n");
         sb.append("도서 목록:\n");
-        try{
-            for (int i = 0; i < books.size(); i++) {
-                BookSearchResponse book = books.get(i);
-                String summaryReview = reviewCoordinator.getOrGenerateSummary(book.getId()).summaryText();
-                sb.append(i + 1).append(". ")
-                        .append("[bookId=").append(book.getId()).append("] ")
-                        .append("제목: ").append(book.getTitle()).append(" / ")
-                        .append("저자: ").append(nullSafe(book.getAuthorName())).append(" / ")
-                        .append("출판사: ").append(nullSafe(book.getPublisherName()))
-                        .append("리뷰요약: ").append(nullSafe(summaryReview));
 
-                if (book.getBookContent() != null && !book.getBookContent().isBlank()) {
-                    String truncated = book.getBookContent().length() > MAX_CONTENT_LENGTH
-                            ? book.getBookContent().substring(0, MAX_CONTENT_LENGTH) + "..."
-                            : book.getBookContent();
-                    sb.append("\n   소개: ").append(truncated);
-                }
-                sb.append("\n");
+        for (int i = 0; i < books.size(); i++) {
+            BookSearchResponse book = books.get(i);
+            String summaryReview = reviewService.getCachedSummary(book.getId()).summaryText();
+
+            sb.append(i + 1).append(". ")
+                    .append("[bookId=").append(book.getId()).append("] ")
+                    .append("제목: ").append(book.getTitle()).append(" / ")
+                    .append("저자: ").append(nullSafe(book.getAuthorName())).append(" / ")
+                    .append("출판사: ").append(nullSafe(book.getPublisherName()))
+                    .append("리뷰요약: ").append(nullSafe(summaryReview));
+
+            if (book.getBookContent() != null && !book.getBookContent().isBlank()) {
+                String truncated = book.getBookContent().length() > MAX_CONTENT_LENGTH
+                        ? book.getBookContent().substring(0, MAX_CONTENT_LENGTH) + "..."
+                        : book.getBookContent();
+                sb.append("\n   소개: ").append(truncated);
             }
-        }catch (JsonProcessingException e){
-
+            sb.append("\n");
         }
 
         return sb.toString();

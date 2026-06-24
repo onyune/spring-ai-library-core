@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nhnacademy.springailibrarycore.agent.BookSearchAgent;
 import com.nhnacademy.springailibrarycore.book.domain.BookSearchCache;
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
@@ -64,7 +65,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 class BookSearchFlowIntegrationTest {
 
     @Autowired
-    private BookSearchService bookSearchService;
+    private BookSearchAgent bookSearchAgent;
 
     // 데이터베이스 & 외부 저장소 Mocking
     @MockitoBean
@@ -187,7 +188,7 @@ class BookSearchFlowIntegrationTest {
                 .thenReturn(Optional.of(mockCache));
 
         // when
-        BookSearchResult result = bookSearchService.searchBooks(pageable, request);
+        BookSearchResult result = bookSearchAgent.searchBooks(pageable, request);
 
         // then
         assertThat(result.books()).hasSize(1);
@@ -242,7 +243,7 @@ class BookSearchFlowIntegrationTest {
                 .thenReturn(mockAiResult);
 
         // when
-        BookSearchResult result = bookSearchService.searchBooks(pageable, request);
+        BookSearchResult result = bookSearchAgent.searchBooks(pageable, request);
 
         // then
         assertThat(result.books()).hasSize(1);

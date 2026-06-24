@@ -1,8 +1,8 @@
 package com.nhnacademy.springailibrarycore.front.controller;
 
+import com.nhnacademy.springailibrarycore.agent.BookSearchAgent;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResult;
-import com.nhnacademy.springailibrarycore.book.service.BookSearchService;
 import java.util.List;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
@@ -18,14 +18,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 @RequiredArgsConstructor
 @Slf4j
 public class BookSearchController {
-    private final BookSearchService bookSearchService;
+    private final BookSearchAgent bookSearchAgent;
 
     @PostMapping("/search")
     public String searchBook(@ModelAttribute BookSearchRequest bookSearchRequest,
                              @PageableDefault(size = 24)Pageable pageable,
                              Model model){
         long startedAt = System.nanoTime();
-        BookSearchResult result = bookSearchService.searchBooks(pageable, bookSearchRequest);
+        BookSearchResult result = bookSearchAgent.searchBooks(pageable, bookSearchRequest);
         double searchTimeSeconds = (System.nanoTime() - startedAt) / 1_000_000_000.0;
 
         model.addAttribute("books", result.books().getContent());
