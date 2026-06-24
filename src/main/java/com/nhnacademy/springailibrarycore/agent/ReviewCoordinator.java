@@ -87,7 +87,7 @@ public class ReviewCoordinator {
         String combinedNewSummaries = String.join("\n\n---\n\n", newPartialSummaries);
 
         String fusionText = String.format(
-                "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 요약본] ---\n%s",
+                "--- [기존 요약 보고서] ---%n%s%n%n--- [추가된 신규 독자 리뷰 요약본] ---%n%s",
                 oldSummaryText,
                 combinedNewSummaries
         );
