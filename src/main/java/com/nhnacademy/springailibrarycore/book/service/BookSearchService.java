@@ -8,8 +8,8 @@ import com.nhnacademy.springailibrarycore.book.exception.DuplicateSearchStrategy
 import com.nhnacademy.springailibrarycore.book.exception.NotFoundSearchStrategyException;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
 
-import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchStrategy;
-import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchStrategy.SearchIntent;
+import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchAgent;
+import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchAgent.SearchIntent;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class BookSearchService {
     private final Map<SearchType, SearchStrategy> strategyMap;
-    private final AutoSearchStrategy autoSearchStrategy;
+    private final AutoSearchAgent autoSearchAgent;
 
-    public BookSearchService(List<SearchStrategy> strategies, AutoSearchStrategy autoSearchStrategy) {
+    public BookSearchService(List<SearchStrategy> strategies, AutoSearchAgent autoSearchAgent) {
         this.strategyMap = strategies.stream()
                 .collect(Collectors.toMap(
                         SearchStrategy::supports, //Key: Enum 타입
@@ -40,7 +40,7 @@ public class BookSearchService {
                         },
                         ()-> new EnumMap<>(SearchType.class) // 최종 결과 EnumMap화
                 ));
-        this.autoSearchStrategy = autoSearchStrategy;
+        this.autoSearchAgent = autoSearchAgent;
     }
 
     /**
@@ -56,7 +56,7 @@ public class BookSearchService {
         String targetKeyword = bookSearchRequest.keyword();
 
         if(targetSearchType.equals(SearchType.AUTO)){
-            SearchIntent searchIntent = autoSearchStrategy.search(bookSearchRequest);
+            SearchIntent searchIntent = autoSearchAgent.search(bookSearchRequest);
             targetSearchType = searchIntent.searchType();
             targetKeyword = searchIntent.parsedQuery();
         }

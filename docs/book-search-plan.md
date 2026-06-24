@@ -74,12 +74,12 @@ com.nhnacademy.library
  │       │       ├─ KeywordSearchStrategy (키워드 검색 전략) O
  │       │       ├─ VectorSearchStrategy (벡터 검색 전략) O
  │       │       ├─ HybridSearchStrategy (RRF 하이브리드 검색 전략) O
- │       │       └─ RagSearchStrategy (RAG 추천 후보 도서 선별 전략) 
+ │       │       └─ RagSearchStrategy (RAG 추천 후보 도서 선별 전략) < 일단은 O >
  │       │       └─ AutoSearchStrategy (Auto Keyword인지 RAG인지 추천 후보 도서 선별 전략) O
  │       └─ agent
  │           ├─ ChatAgent (챗 에이전트 - 사용자 메시지 분기 및 병렬 툴 제어)
- │           ├─ BookSearchAgent (도서 검색 에이전트 - AUTO 모드 분석 및 툴 호출)
- │           ├─ BookRecommendationAgent (도서 추천 에이전트 - 추천 사유 집필)
+ │           ├─ BookSearchAgent (도서 검색 에이전트 - AUTO 모드 분석 및 툴 호출) O
+ │           ├─ BookRecommendationAgent (도서 추천 에이전트 - 추천 사유 집필) O
  │           ├─ LibraryInfoAgent (도서관 정보 에이전트 - 외부 API 코디네이터)
  │           └─ AgentTools (에이전트가 실행할 기능들을 담은 공용 @Tool 클래스)
  ├─ core.review

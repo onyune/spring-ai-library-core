@@ -14,10 +14,10 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class AutoSearchStrategy {
+public class AutoSearchAgent {
     private final ChatClient chatClient;
 
-    public AutoSearchStrategy(@Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClient) {
+    public AutoSearchAgent(@Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClient) {
         String systemPrompt = """
                 너는 도서관의 스마트 검색 라우팅 어시스턴트야.
                 너는 스마트 도서 검색 라우터야.

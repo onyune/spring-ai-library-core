@@ -53,11 +53,9 @@ public class VectorBookSearchRepository {
                         book.id,
                         book.isbn,
                         book.title,
-                        book.volumeTitle,
                         book.authorName,
                         book.publisherName,
                         book.price,
-                        book.editionPublishDate,
                         book.imageUrl,
                         book.bookContent,
                         similarity
@@ -85,5 +83,6 @@ public class VectorBookSearchRepository {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total == null ? 0 : total);
+
     }
 }

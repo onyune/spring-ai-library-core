@@ -11,6 +11,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
+/**
+ * HYBRID + RRF SCORE 점수 결과를 바탕으로 5개 도서 추출
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor

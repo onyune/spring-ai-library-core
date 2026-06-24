@@ -3,9 +3,9 @@ package com.nhnacademy.springailibrarycore.book.dto;
 import com.nhnacademy.springailibrarycore.book.domain.Book;
 import com.querydsl.core.annotations.QueryProjection;
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 /**
  * 키워드, 벡터, 하이브리드 검색에서 공통으로 사용하는 응답 DTO.
@@ -14,18 +14,19 @@ import lombok.Getter;
  * 명시적으로 세팅하지 않은 필드는 {@code null}로 초기화되므로 하드코딩 누락이 발생하지 않습니다.
  */
 @Getter
+@Jacksonized
 @Builder(toBuilder = true)
 public class BookSearchResponse {
 
     private final Long id;
     private final String isbn;
     private final String title;
-    private final String volumeTitle;
     private final String authorName;
     private final String publisherName;
     private final BigDecimal price;
-    private final LocalDate editionPublishDate;
     private final String imageUrl;
+
+    /** 도서 소개 내용. AI 추천 사유 생성 컨텍스트로 활용됩니다. */
     private final String bookContent;
 
     /** 벡터 검색 유사도 (0.0 ~ 1.0). 키워드 검색 결과에서는 null. */
@@ -49,16 +50,14 @@ public class BookSearchResponse {
             Long id,
             String isbn,
             String title,
-            String volumeTitle,
             String authorName,
             String publisherName,
             BigDecimal price,
-            LocalDate editionPublishDate,
             String imageUrl,
             String bookContent
     ) {
-        this(id, isbn, title, volumeTitle, authorName, publisherName,
-                price, editionPublishDate, imageUrl, bookContent,
+        this(id, isbn, title, authorName, publisherName,
+                price, imageUrl, bookContent,
                 null, null, null, null);
     }
 
@@ -71,17 +70,15 @@ public class BookSearchResponse {
             Long id,
             String isbn,
             String title,
-            String volumeTitle,
             String authorName,
             String publisherName,
             BigDecimal price,
-            LocalDate editionPublishDate,
             String imageUrl,
             String bookContent,
             Double similarity
     ) {
-        this(id, isbn, title, volumeTitle, authorName, publisherName,
-                price, editionPublishDate, imageUrl, bookContent,
+        this(id, isbn, title, authorName, publisherName,
+                price, imageUrl, bookContent,
                 similarity, null, null, null);
     }
 
@@ -92,11 +89,9 @@ public class BookSearchResponse {
             Long id,
             String isbn,
             String title,
-            String volumeTitle,
             String authorName,
             String publisherName,
             BigDecimal price,
-            LocalDate editionPublishDate,
             String imageUrl,
             String bookContent,
             Double similarity,
@@ -107,11 +102,9 @@ public class BookSearchResponse {
         this.id = id;
         this.isbn = isbn;
         this.title = title;
-        this.volumeTitle = volumeTitle;
         this.authorName = authorName;
         this.publisherName = publisherName;
         this.price = price;
-        this.editionPublishDate = editionPublishDate;
         this.imageUrl = imageUrl;
         this.bookContent = bookContent;
         this.similarity = similarity;
@@ -129,11 +122,9 @@ public class BookSearchResponse {
                 .id(book.getId())
                 .isbn(book.getIsbn())
                 .title(book.getTitle())
-                .volumeTitle(book.getVolumeTitle())
                 .authorName(book.getAuthorName())
                 .publisherName(book.getPublisherName())
                 .price(book.getPrice())
-                .editionPublishDate(book.getEditionPublishDate())
                 .imageUrl(book.getImageUrl())
                 .bookContent(book.getBookContent())
                 .build();
