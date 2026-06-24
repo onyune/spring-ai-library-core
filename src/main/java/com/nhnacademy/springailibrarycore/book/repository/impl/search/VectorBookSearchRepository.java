@@ -1,8 +1,8 @@
 package com.nhnacademy.springailibrarycore.book.repository.impl.search;
 
-import com.nhnacademy.springailibrarycore.domain.QBook;
+import com.nhnacademy.springailibrarycore.book.domain.QBook;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
-import com.querydsl.core.types.Projections;
+import com.nhnacademy.springailibrarycore.book.dto.QBookSearchResponse;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -14,6 +14,9 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+/**
+ * QueryDSL 벡터 기반 도서 리스트 추출
+ */
 @Repository
 @RequiredArgsConstructor
 public class VectorBookSearchRepository {
@@ -46,16 +49,13 @@ public class VectorBookSearchRepository {
         );
 
         List<BookSearchResponse> content = queryFactory
-                .select(Projections.constructor(
-                        BookSearchResponse.class,
+                .select(new QBookSearchResponse(
                         book.id,
                         book.isbn,
                         book.title,
-                        book.volumeTitle,
                         book.authorName,
                         book.publisherName,
                         book.price,
-                        book.editionPublishDate,
                         book.imageUrl,
                         book.bookContent,
                         similarity
@@ -83,5 +83,6 @@ public class VectorBookSearchRepository {
                 .fetchOne();
 
         return new PageImpl<>(content, pageable, total == null ? 0 : total);
+
     }
 }

@@ -4,13 +4,14 @@ import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
-import com.nhnacademy.springailibrarycore.book.service.embedding.EmbeddingService;
-import com.nhnacademy.springailibrarycore.book.service.search.RrfFusionService;
+import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
+import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfFusionSubAgent;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
+import com.nhnacademy.springailibrarycore.util.PageableUtils;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -31,8 +32,8 @@ public class HybridSearchStrategy implements SearchStrategy {
     private static final int CANDIDATE_SIZE = 100;
 
     private final BookRepository bookRepository;
-    private final EmbeddingService embeddingService;
-    private final RrfFusionService rrfFusionService;
+    private final EmbeddingSubAgent embeddingSubAgent;
+    private final RrfFusionSubAgent rrfFusionSubAgent;
 
     @Override
     public SearchType supports() {
@@ -40,6 +41,7 @@ public class HybridSearchStrategy implements SearchStrategy {
     }
 
     @Override
+    @Cacheable(value = "hybridSearchCache", key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
     public Page<BookSearchResponse> search(
             Pageable pageable,
             BookSearchRequest request
@@ -51,6 +53,7 @@ public class HybridSearchStrategy implements SearchStrategy {
         String keyword = request.keyword().trim();
         Pageable candidatePage = PageRequest.of(0, CANDIDATE_SIZE);
 
+        // ---------- KEYWORD 검색 -------------
         BookSearchRequest keywordRequest = new BookSearchRequest(
                 keyword,
                 request.isbn(),
@@ -62,9 +65,10 @@ public class HybridSearchStrategy implements SearchStrategy {
         List<BookSearchResponse> keywordResults =
                 bookRepository.search(candidatePage, keywordRequest).getContent();
 
+        // ---------------- VECTOR 검색 --------------
         float[] queryVector = request.vector() != null
                 ? request.vector()
-                : embeddingService.getEmbedding(keyword);
+                : embeddingSubAgent.getEmbedding(keyword);
         BookSearchRequest vectorRequest = new BookSearchRequest(
                 keyword,
                 request.isbn(),
@@ -75,26 +79,10 @@ public class HybridSearchStrategy implements SearchStrategy {
         List<BookSearchResponse> vectorResults =
                 bookRepository.vectorSearch(candidatePage, vectorRequest).getContent();
 
+        // ---------------- (KEYWORD + VECTOR) -> rrf 점수를 반영한 도서 리스트 반환 ---------------
         List<BookSearchResponse> rankedResults =
-                rrfFusionService.fuse(keywordResults, vectorResults);
+                rrfFusionSubAgent.fuse(keywordResults, vectorResults);
 
-        return toPage(rankedResults, pageable);
-    }
-
-    private Page<BookSearchResponse> toPage(
-            List<BookSearchResponse> results,
-            Pageable pageable
-    ) {
-        int start = Math.toIntExact(pageable.getOffset());
-        if (start >= results.size()) {
-            return new PageImpl<>(List.of(), pageable, results.size());
-        }
-
-        int end = Math.min(start + pageable.getPageSize(), results.size());
-        return new PageImpl<>(
-                results.subList(start, end),
-                pageable,
-                results.size()
-        );
+        return PageableUtils.toPage(rankedResults, pageable);
     }
 }

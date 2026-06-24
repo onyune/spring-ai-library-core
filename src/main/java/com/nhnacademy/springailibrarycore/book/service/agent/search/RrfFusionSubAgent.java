@@ -1,4 +1,4 @@
-package com.nhnacademy.springailibrarycore.book.service.search;
+package com.nhnacademy.springailibrarycore.book.service.agent.search;
 
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import java.util.ArrayList;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
  * k = 60 (기본값, 상위 랭킹에 지나치게 높은 가중치가 쏠리는 것을 방지)
  */
 @Service
-public class RrfFusionService {
+public class RrfFusionSubAgent {
 
     private static final int K = 60;
 
@@ -24,7 +24,7 @@ public class RrfFusionService {
      *
      * @param keywordResults 키워드 검색 결과 (순위 순)
      * @param vectorResults  벡터 검색 결과 (유사도 순)
-     * @return RRF 점수가 높은 순으로 정렬된 통합 결과
+     * @return RRF 점수가 높은 순으로 정렬된 통합 결과 List<BookSearchResponse>
      */
     public List<BookSearchResponse> fuse(
             List<BookSearchResponse> keywordResults,
@@ -35,29 +35,29 @@ public class RrfFusionService {
         // 키워드 검색 결과에 RRF 점수 부여
         for (int rank = 0; rank < keywordResults.size(); rank++) {
             BookSearchResponse book = keywordResults.get(rank);
-            if (book.id() != null) {
-                rrfScoreMap.merge(book.id(), 1.0 / (K + rank + 1), Double::sum);
+            if (book.getId() != null) {
+                rrfScoreMap.merge(book.getId(), 1.0 / (K + rank + 1), Double::sum);
             }
         }
 
         // 벡터 검색 결과에 RRF 점수 추가 합산
         for (int rank = 0; rank < vectorResults.size(); rank++) {
             BookSearchResponse book = vectorResults.get(rank);
-            if (book.id() != null) {
-                rrfScoreMap.merge(book.id(), 1.0 / (K + rank + 1), Double::sum);
+            if (book.getId() != null) {
+                rrfScoreMap.merge(book.getId(), 1.0 / (K + rank + 1), Double::sum);
             }
         }
 
         // 두 리스트를 합쳐 중복 제거 후 RRF 점수 부착
         Map<Long, BookSearchResponse> bookMap = new HashMap<>();
         for (BookSearchResponse book : keywordResults) {
-            if (book.id() != null) {
-                bookMap.put(book.id(), book);
+            if (book.getId() != null) {
+                bookMap.put(book.getId(), book);
             }
         }
         for (BookSearchResponse book : vectorResults) {
-            if (book.id() != null) {
-                bookMap.putIfAbsent(book.id(), book);
+            if (book.getId() != null) {
+                bookMap.putIfAbsent(book.getId(), book);
             }
         }
 
@@ -69,7 +69,7 @@ public class RrfFusionService {
         }
 
         result.sort(Comparator.comparingDouble(
-                (BookSearchResponse b) -> b.rrfScore() != null ? b.rrfScore() : 0.0
+                (BookSearchResponse b) -> b.getRrfScore() != null ? b.getRrfScore() : 0.0
         ).reversed());
 
         return result;

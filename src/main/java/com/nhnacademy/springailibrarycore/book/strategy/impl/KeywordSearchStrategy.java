@@ -6,6 +6,7 @@ import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -25,6 +26,7 @@ public class KeywordSearchStrategy implements SearchStrategy {
     }
 
     @Override
+    @Cacheable(value = "keywordSearchCache", key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
     public Page<BookSearchResponse> search(
             Pageable pageable,
             BookSearchRequest request
