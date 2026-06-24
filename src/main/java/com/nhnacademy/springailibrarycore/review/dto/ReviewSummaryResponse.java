@@ -6,6 +6,7 @@ public record ReviewSummaryResponse(
         Long bookId,
         ReviewStatus status,
         String summaryText,
-        String errorMessage
+        String errorMessage,
+        Long lastProcessReviewId
 ) {
 }

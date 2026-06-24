@@ -32,17 +32,9 @@ public class ReviewService {
     private final ObjectMapper objectMapper;
     private final ReviewSseSender reviewSseSender;
 
-    /**
-     * 특정 도서의 리뷰 요약을 요청합니다.
-     * 캐시 히트 시 RabbitMQ를 거치지 않고 바로 SSE로 완료된 요약을 반환합니다.
-     * 캐시 미스 시 RabbitMQ에 메시지를 발행하고 요약 처리를 기다립니다.
-     *
-     * @param bookId 도서 ID
-     * @return SseEmitter 클라이언트 접속 세션
-     */
     public SseEmitter requestReviewSummary(Long bookId) {
         log.info("[ReviewService] 리뷰 요약 요청 시작 -> bookId: {}", bookId);
-        
+
         // 도서 존재 여부 유효성 검사
         if (!bookRepository.existsById(bookId)) {
             log.warn("[ReviewService] 존재하지 않는 도서 ID에 대한 요약 요청 차단 -> bookId: {}", bookId);
@@ -54,11 +46,12 @@ public class ReviewService {
             log.info("[ReviewService] 작성된 리뷰가 없으므로 Agent 호출 및 캐싱 없이 즉시 종료 -> bookId: {}", bookId);
             SseEmitter emitter = new SseEmitter(180000L);
             reviewSseSender.addEmitter(bookId, emitter);
-            
+
             ReviewSummaryResponse emptyResponse = new ReviewSummaryResponse(
                     bookId,
                     ReviewStatus.DONE,
                     "아직 작성된 독자 리뷰가 없습니다.",
+                    null,
                     null
             );
             reviewSseSender.sendSummary(bookId, emptyResponse);
@@ -69,26 +62,32 @@ public class ReviewService {
         SseEmitter emitter = new SseEmitter(180000L);
         reviewSseSender.addEmitter(bookId, emitter);
 
-        // 캐시 확인
+        // 캐시 및 신규 리뷰 개수 1차 검증
         ReviewSummaryResponse cachedResponse = getCachedSummary(bookId);
 
         if (cachedResponse != null) {
-            log.info("[ReviewService] Redis Cache Hit. SSE로 즉시 요약본 전송 후 종료 -> bookId: {}", bookId);
-            reviewSseSender.sendSummary(bookId, cachedResponse);
-        } else {
-            log.info("[ReviewService] Redis Cache Miss. RabbitMQ 이벤트 발행 -> bookId: {}", bookId);
-            rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, RabbitConfig.ROUTING_KEY, bookId);
+            Long lastReviewId = cachedResponse.lastProcessReviewId();
+            if (lastReviewId != null) {
+                // 큐 발행 전에 신규 리뷰 개수를 먼저 확인!
+                long newReviewCount = reviewRepository.countByBookIdAndIdGreaterThan(bookId, lastReviewId);
+                log.info("[ReviewService] 기존 캐시 요약 존재. 신규 리뷰 개수: {}개", newReviewCount);
+
+                if (newReviewCount < 10) {
+                    // 10개 미만이면 RabbitMQ에 던지지 않고 캐시를 즉시 돌려주고 조기 종료
+                    log.info("[ReviewService] 신규 리뷰가 10개 미만이므로 큐 발행 생략. 즉시 캐시 전송 -> bookId: {}", bookId);
+                    reviewSseSender.sendSummary(bookId, cachedResponse);
+                    return emitter;
+                }
+            }
         }
+
+        // 캐시가 아예 없거나, 신규 리뷰가 10개 이상 쌓인 경우에만 비동기 큐 발행
+        log.info("[ReviewService] 캐시 미스 또는 신규 리뷰 10개 이상({}개) 확인. RabbitMQ 이벤트 발행", bookId);
+        rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, RabbitConfig.ROUTING_KEY, bookId);
 
         return emitter;
     }
 
-    /**
-     * 특정 도서 리뷰 요약 캐시 조회
-     *
-     * @param bookId 도서 ID
-     * @return 캐시된 요약 응답 또는 null
-     */
     public ReviewSummaryResponse getCachedSummary(Long bookId) {
         String cacheKey = "review:summary:" + bookId;
         String cachedValue = redisTemplate.opsForValue().get(cacheKey);

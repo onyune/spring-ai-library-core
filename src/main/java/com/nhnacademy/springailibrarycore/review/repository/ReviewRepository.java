@@ -23,5 +23,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     //도서의 리뷰 목록 페이징 조회
     Page<Review> findByBookId(Long bookId, Pageable pageable);
+
+    List<Review> findByBookIdAndIdGreaterThanOrderByIdDesc(Long bookId, Long lastReviewId);
+
+    long countByBookIdAndIdGreaterThan(Long bookId, Long lastReviewId);
 }
 
