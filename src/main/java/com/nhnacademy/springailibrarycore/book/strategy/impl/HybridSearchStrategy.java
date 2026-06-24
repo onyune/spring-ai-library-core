@@ -1,5 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.strategy.impl;
 
+import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_BOOK_SEARCH;
+
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
@@ -41,7 +43,7 @@ public class HybridSearchStrategy implements SearchStrategy {
     }
 
     @Override
-    @Cacheable(value = "hybridSearchCache", key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
+    @Cacheable(value = CACHE_BOOK_SEARCH, key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
     public Page<BookSearchResponse> search(
             Pageable pageable,
             BookSearchRequest request

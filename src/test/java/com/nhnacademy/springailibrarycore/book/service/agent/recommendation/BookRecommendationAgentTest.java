@@ -6,7 +6,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.nhnacademy.springailibrarycore.agent.ReviewCoordinator;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.dto.ai.BookRecommendation;
+import com.nhnacademy.springailibrarycore.book.dto.ai.RecommendationResult;
+import com.nhnacademy.springailibrarycore.review.domain.ReviewStatus;
+import com.nhnacademy.springailibrarycore.review.dto.ReviewSummaryResponse;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,15 +25,17 @@ class BookRecommendationAgentTest {
     private ChatClient.Builder chatClientBuilder;
     private ChatClient.ChatClientRequestSpec requestSpec;
     private ChatClient.CallResponseSpec callResponseSpec;
+    private ReviewCoordinator reviewCoordinator;
 
     private BookRecommendationAgent agent;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         chatClient = mock(ChatClient.class);
         chatClientBuilder = mock(ChatClient.Builder.class);
         requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
         callResponseSpec = mock(ChatClient.CallResponseSpec.class);
+        reviewCoordinator = mock(ReviewCoordinator.class);
 
         when(chatClientBuilder.defaultSystem(anyString())).thenReturn(chatClientBuilder);
         when(chatClientBuilder.build()).thenReturn(chatClient);
@@ -37,13 +44,18 @@ class BookRecommendationAgentTest {
         when(requestSpec.user(anyString())).thenReturn(requestSpec);
         when(requestSpec.call()).thenReturn(callResponseSpec);
 
-        agent = new BookRecommendationAgent(chatClientBuilder);
+        // ReviewCoordinator Mock 동작 추가 (NullPointerException 방지)
+        when(reviewCoordinator.getOrGenerateSummary(any(Long.class))).thenAnswer(invocation -> {
+            Long bookId = invocation.getArgument(0);
+            return new ReviewSummaryResponse(bookId, ReviewStatus.DONE, "리뷰 요약 내용", null, 1L);
+        });
+
+        agent = new BookRecommendationAgent(chatClientBuilder, reviewCoordinator);
     }
 
     @Test
     @DisplayName("AI 응답을 받아 도서 정보(aiComment, relevance)를 성공적으로 채우고 순서를 유지한다")
     void enrich_success() {
-        // given
         BookSearchResponse book1 = BookSearchResponse.builder()
                 .id(1L)
                 .title("토비의 스프링")
@@ -64,16 +76,14 @@ class BookRecommendationAgentTest {
 
         List<BookSearchResponse> books = List.of(book1, book2);
 
-        BookRecommendationAgent.BookRecommendation rec1 = new BookRecommendationAgent.BookRecommendation(1L, 95, "스프링 핵심 원리를 깊이 있게 설명하는 책입니다.");
-        BookRecommendationAgent.BookRecommendation rec2 = new BookRecommendationAgent.BookRecommendation(2L, 88, "객체지향 설계를 마스터하기에 아주 좋은 책입니다.");
-        BookRecommendationAgent.RecommendationResult mockResult = new BookRecommendationAgent.RecommendationResult(List.of(rec1, rec2));
+        BookRecommendation rec1 = new BookRecommendation(1L, 95, "스프링 핵심 원리를 깊이 있게 설명하는 책입니다.");
+        BookRecommendation rec2 = new BookRecommendation(2L, 88, "객체지향 설계를 마스터하기에 아주 좋은 책입니다.");
+        RecommendationResult mockResult = new RecommendationResult(List.of(rec1, rec2));
 
-        when(callResponseSpec.entity(BookRecommendationAgent.RecommendationResult.class)).thenReturn(mockResult);
+        when(callResponseSpec.entity(RecommendationResult.class)).thenReturn(mockResult);
 
-        // when
         List<BookSearchResponse> enriched = agent.enrich("스프링 객체지향 관련 도서 추천해줘", books);
 
-        // then
         assertThat(enriched).hasSize(2);
         assertThat(enriched.get(0).getId()).isEqualTo(1L);
         assertThat(enriched.get(0).getRelevance()).isEqualTo(95);
@@ -87,19 +97,16 @@ class BookRecommendationAgentTest {
     @Test
     @DisplayName("AI 응답이 null인 경우 원본 도서 목록을 그대로 반환한다")
     void enrich_nullResponse() {
-        // given
         BookSearchResponse book = BookSearchResponse.builder()
                 .id(1L)
                 .title("토비의 스프링")
                 .build();
         List<BookSearchResponse> books = List.of(book);
 
-        when(callResponseSpec.entity(BookRecommendationAgent.RecommendationResult.class)).thenReturn(null);
+        when(callResponseSpec.entity(RecommendationResult.class)).thenReturn(null);
 
-        // when
         List<BookSearchResponse> enriched = agent.enrich("검색", books);
 
-        // then
         assertThat(enriched).hasSize(1);
         assertThat(enriched.get(0).getAiComment()).isNull();
         assertThat(enriched.get(0).getRelevance()).isNull();
@@ -108,20 +115,17 @@ class BookRecommendationAgentTest {
     @Test
     @DisplayName("AI 호출 중 예외가 발생하면 예외를 잡아 로그를 남기고 원본 목록을 그대로 반환한다")
     void enrich_exceptionFallback() {
-        // given
         BookSearchResponse book = BookSearchResponse.builder()
                 .id(1L)
                 .title("토비의 스프링")
                 .build();
         List<BookSearchResponse> books = List.of(book);
 
-        when(callResponseSpec.entity(BookRecommendationAgent.RecommendationResult.class))
+        when(callResponseSpec.entity(RecommendationResult.class))
                 .thenThrow(new RuntimeException("AI API Timeout"));
 
-        // when
         List<BookSearchResponse> enriched = agent.enrich("검색", books);
 
-        // then
         assertThat(enriched).hasSize(1);
         assertThat(enriched.get(0).getAiComment()).isNull();
         assertThat(enriched.get(0).getRelevance()).isNull();

@@ -24,10 +24,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * 일반 캐싱(@Cacheable, @CacheEvict 등)용 Redis 설정입니다.
- *
- * 벡터 캐시({@link RedisVectorStoreConfig})와 다른 커넥션 팩토리를 사용하므로
- * 일반 캐시와 벡터 캐시가 서로 간섭하지 않습니다.
- *
+ **
  * 캐시 이름 & TTL
  *
  * bookSearch  - 도서 검색 결과 (10분)
@@ -105,10 +102,8 @@ public class RedisCacheConfig {
 
         // 캐시별 TTL 개별 설정
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put(CACHE_BOOK_SEARCH,
-                defaultConfig.entryTtl(Duration.ofHours(3))); // TODO: 캐시 시간 상의하기
-        cacheConfigurations.put(CACHE_EMBEDDING,
-                defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put(CACHE_BOOK_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3))); // TODO: 캐시 시간 상의하기
+        cacheConfigurations.put(CACHE_EMBEDDING, defaultConfig.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

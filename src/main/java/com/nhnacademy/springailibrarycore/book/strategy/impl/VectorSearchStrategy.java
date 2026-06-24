@@ -1,5 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.strategy.impl;
 
+import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_BOOK_SEARCH;
+
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
@@ -32,7 +34,7 @@ public class VectorSearchStrategy implements SearchStrategy {
     }
 
     @Override
-    @Cacheable(value = "vectorSearchCache", key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
+    @Cacheable(value = CACHE_BOOK_SEARCH, key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
     // 검색어와 페이지 번호가 완전히 똑같을 때만 캐시를 탐
     public Page<BookSearchResponse> search(Pageable pageable, BookSearchRequest request) {
         if (!StringUtils.hasText(request.keyword())) {

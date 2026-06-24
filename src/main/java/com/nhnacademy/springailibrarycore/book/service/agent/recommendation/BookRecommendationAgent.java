@@ -1,5 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.recommendation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.nhnacademy.springailibrarycore.agent.ReviewCoordinator;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.ai.BookRecommendation;
 import com.nhnacademy.springailibrarycore.book.dto.ai.RecommendationResult;
@@ -26,13 +28,16 @@ public class BookRecommendationAgent {
     private static final int MAX_CONTENT_LENGTH = 200;
 
     private final ChatClient chatClient;
+    private final ReviewCoordinator reviewCoordinator;
 
     public BookRecommendationAgent(
-            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder
+            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
+            ReviewCoordinator reviewCoordinator
     ) {
         String systemPrompt = """
                 너는 도서관 큐레이터야.
                 사용자의 검색 질문에 대해 각 도서가 왜 추천되는지 한국어로 2~3문장으로 설명해.
+                리뷰요약은 해당 책에 대한 사용자들의 리뷰를 종합적으로 나타낸 요약본이야 추천되는 이유에 리뷰요약도 함께 포함해서 만들어줘
                 relevance는 0~100 사이의 정수로, 질문과의 연관성 점수야.
                 
                 [규칙]
@@ -41,9 +46,11 @@ public class BookRecommendationAgent {
                 - aiComment는 반드시 한국어로 작성해.
                 - relevance가 낮아도 이유는 성실히 작성해.
                 """;
+        this.reviewCoordinator = reviewCoordinator;
         this.chatClient = chatClientBuilder
                 .defaultSystem(systemPrompt)
                 .build();
+
     }
 
     /**
@@ -109,23 +116,29 @@ public class BookRecommendationAgent {
         StringBuilder sb = new StringBuilder();
         sb.append("질문: \"").append(question).append("\"\n\n");
         sb.append("도서 목록:\n");
+        try{
+            for (int i = 0; i < books.size(); i++) {
+                BookSearchResponse book = books.get(i);
+                String summaryReview = reviewCoordinator.getOrGenerateSummary(book.getId()).summaryText();
+                sb.append(i + 1).append(". ")
+                        .append("[bookId=").append(book.getId()).append("] ")
+                        .append("제목: ").append(book.getTitle()).append(" / ")
+                        .append("저자: ").append(nullSafe(book.getAuthorName())).append(" / ")
+                        .append("출판사: ").append(nullSafe(book.getPublisherName()))
+                        .append("리뷰요약: ").append(nullSafe(summaryReview));
 
-        for (int i = 0; i < books.size(); i++) {
-            BookSearchResponse book = books.get(i);
-            sb.append(i + 1).append(". ")
-              .append("[bookId=").append(book.getId()).append("] ")
-              .append("제목: ").append(book.getTitle()).append(" / ")
-              .append("저자: ").append(nullSafe(book.getAuthorName())).append(" / ")
-              .append("출판사: ").append(nullSafe(book.getPublisherName()));
-
-            if (book.getBookContent() != null && !book.getBookContent().isBlank()) {
-                String truncated = book.getBookContent().length() > MAX_CONTENT_LENGTH
-                        ? book.getBookContent().substring(0, MAX_CONTENT_LENGTH) + "..."
-                        : book.getBookContent();
-                sb.append("\n   소개: ").append(truncated);
+                if (book.getBookContent() != null && !book.getBookContent().isBlank()) {
+                    String truncated = book.getBookContent().length() > MAX_CONTENT_LENGTH
+                            ? book.getBookContent().substring(0, MAX_CONTENT_LENGTH) + "..."
+                            : book.getBookContent();
+                    sb.append("\n   소개: ").append(truncated);
+                }
+                sb.append("\n");
             }
-            sb.append("\n");
+        }catch (JsonProcessingException e){
+
         }
+
         return sb.toString();
     }
 

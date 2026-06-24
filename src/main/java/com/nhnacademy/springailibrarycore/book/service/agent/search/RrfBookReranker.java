@@ -1,4 +1,4 @@
-package com.nhnacademy.springailibrarycore.book.strategy.support;
+package com.nhnacademy.springailibrarycore.book.service.agent.search;
 
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
