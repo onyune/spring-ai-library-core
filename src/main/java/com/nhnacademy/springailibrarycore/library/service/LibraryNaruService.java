@@ -134,7 +134,7 @@ public class LibraryNaruService {
     /**
      * 특정 도서관 또는 특정 행정 구역 기준 인기대출 도서 조회 API를 호출합니다.
      *
-     * 필수 조건: libCode(도서관), region}(시도), dtl_region(시군구) 중 최소 하나는 반드시 필수
+     * 필수 조건: libCode(도서관), region(시도), dtl_region(시군구) 중 최소 하나는 반드시 필수
      * 선택된 도서관/지역 범위 내에서 성별, 연령대, ISBN 부가기호, 주제 대/소분류 필터를 조합하여 대출 랭킹을 집계
      * 지역/도서관 조건 및 코드는 세미콜론(;)을 구분자로 한 다중값 지정이 동일하게 지원, 최대 200건의 목록이 제공\
      *
@@ -164,6 +164,9 @@ public class LibraryNaruService {
         return (response != null && response.response() != null) ? response.response().result() : null;
     }
 
+
+
+    //이건 안쓸듯
     /**
      * 도서관정보나루 빅데이터 데이터베이스를 기반으로 도서를 검색
      * 도서명(title), 저자명(author), 출판사(publisher), ISBN(isbn13), 키워드(keyword) 조건을 AND 연산으로 조합해 검색

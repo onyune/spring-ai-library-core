@@ -5,11 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * 도서관 정보나루의 모든 도서 데이터에 대응하는 통합 도서 정보 DTO 레코드입니다.
- * <p>
  * 정보나루 API 마다 동일한 의미의 필드가 서로 다른 이름(예: 대출수 {@code loan_count} vs {@code loanCnt})으로 반환되거나,
- * 신착도서, 추천도서, 도서 검색, 상세 등에서 필드가 선별적으로 제공됩니다.
- * 이를 한 클래스 내에서 Jackson 매핑을 활용해 공통 모델화 하였습니다.
- * </p>
+ * 신착도서, 추천도서, 도서 검색, 상세 등에서 필드가 선별적으로 제공
+ * 이를 한 클래스 내에서 Jackson 매핑을 활용해 공통 모델화
  *
  * @param no                 결과 목록 순번 (예: 마니아 추천 도서의 추천 인덱스)
  * @param ranking            인기 도서 대출 순위
