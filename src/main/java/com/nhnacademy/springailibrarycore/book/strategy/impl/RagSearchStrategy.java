@@ -46,7 +46,7 @@ public class RagSearchStrategy implements SearchStrategy {
         String normalizedQuestion = request.keyword().trim();
         float[] questionVector = request.vector() != null
                 ? request.vector()
-                : embeddingSubAgent.getEmbedding(normalizedQuestion);
+                : embeddingSubAgent.getEmbedding(normalizedQuestion).vector();
 
         /* ============ 캐시 조회 ============*/
 

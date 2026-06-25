@@ -70,6 +70,6 @@ public class GlobalExceptionHandler {
     ) {
         model.addAttribute("status", status);
         model.addAttribute("message", message);
-        return "common/error/error";
+        return "error/error";
     }
 }
