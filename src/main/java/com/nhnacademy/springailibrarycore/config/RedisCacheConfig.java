@@ -24,16 +24,13 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * 일반 캐싱(@Cacheable, @CacheEvict 등)용 Redis 설정입니다.
+ **
+ * 캐시 이름 & TTL
  *
- * <p>벡터 캐시({@link RedisVectorStoreConfig})와 다른 커넥션 팩토리를 사용하므로
- * 일반 캐시와 벡터 캐시가 서로 간섭하지 않습니다.
- *
- * <h3>캐시 이름 & TTL</h3>
- * <ul>
- *   <li>{@code bookSearch}  - 도서 검색 결과 (10분)</li>
- *   <li>{@code bookDetail}  - 도서 상세 정보 (1시간)</li>
- *   <li>{@code embedding}   - 임베딩 벡터 결과 (24시간)</li>
- *   <li>그 외 기본값         - 30분</li>
+ * bookSearch  - 도서 검색 결과 (10분)
+ * bookDetail  - 도서 상세 정보 (1시간)
+ * embedding   - 임베딩 벡터 결과 (24시간)
+ * 그 외 기본값         - 30분
  * </ul>
  */
 @Configuration
@@ -54,7 +51,6 @@ public class RedisCacheConfig {
     private int cacheDatabase;
 
     public static final String CACHE_BOOK_SEARCH  = "bookSearch";
-    public static final String CACHE_BOOK_DETAIL  = "bookDetail";
     public static final String CACHE_EMBEDDING    = "embedding";
 
     /**
@@ -106,12 +102,8 @@ public class RedisCacheConfig {
 
         // 캐시별 TTL 개별 설정
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put(CACHE_BOOK_SEARCH,
-                defaultConfig.entryTtl(Duration.ofMinutes(10)));
-        cacheConfigurations.put(CACHE_BOOK_DETAIL,
-                defaultConfig.entryTtl(Duration.ofHours(1)));
-        cacheConfigurations.put(CACHE_EMBEDDING,
-                defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put(CACHE_BOOK_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3))); // TODO: 캐시 시간 상의하기
+        cacheConfigurations.put(CACHE_EMBEDDING, defaultConfig.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)

@@ -22,7 +22,7 @@ public class VectorConverter implements AttributeConverter<float[], String> {
             return null;
         }
         // Remove brackets "[" and "]"
-        String cleanData = dbData.substring(1, dbData.length() - 1);
+        String cleanData = dbData.substring(1, dbData.length() - 1).trim();
         if (cleanData.isEmpty()) {
             return new float[0];
         }

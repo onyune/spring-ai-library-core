@@ -14,11 +14,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
+/**
+ * 리뷰 요약 Agent들 조율
+ * ReviewMapAgent와 ReviewReduceAgent들을 적절히 조율
+ * 캐시된 리뷰와
+ * 캐시된 리뷰에 있는 마지막 요약 리뷰아이디 이후의 리뷰들을 요약하여
+ * 합산 후 리턴
+ *
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class ReviewCoordinator {
-
     private final ReviewRepository reviewRepository;
     private final ReviewMapAgent mapAgent;
     private final ReviewReduceAgent reduceAgent;
@@ -32,25 +39,24 @@ public class ReviewCoordinator {
      * @return ReviewSummaryResponse 최종 요약 결과 DTO
      */
     public ReviewSummaryResponse getOrGenerateSummary(Long bookId) throws JsonProcessingException {
-        log.info("[ReviewCoordinator] Map-Reduce 증분 요약 조회 및 생성 요청 -> bookId: {}", bookId);
+        log.info("[ReviewCoordinator] 증분 요약 조회 및 생성 요청 -> bookId: {}", bookId);
         String cacheKey = "review:summary:" + bookId;
 
-        // 1. Redis 캐시 확인
+        //요약된 정보 가져오기
         String strResponse = redisTemplate.opsForValue().get(cacheKey);
-        
-        if (strResponse != null) {
+
+        if(strResponse != null) {
             ReviewSummaryResponse cachedResponse = objectMapper.readValue(strResponse, ReviewSummaryResponse.class);
             Long lastReviewId = cachedResponse.lastProcessReviewId();
 
-            if (lastReviewId != null) {
-                // 💡 리스너가 가동되었으므로 바로 증분 요약 진행 (ReviewService에서 이미 10개 이상 검증 완료)
-                log.info("[ReviewCoordinator] 기존 캐시 발견. Map-Reduce 증분 요약 시작 -> bookId: {}", bookId);
+            if(lastReviewId != null) {
+                log.info("[ReviewCoordinator] 기존 캐시 발견. 중분 요약 시작 -> bookId: {} ", bookId);
                 return generateIncrementalSummary(bookId, cachedResponse, lastReviewId, cacheKey);
             }
         }
 
-        // 캐시가 없는 경우: 최초 요약 진행
-        log.info("[ReviewCoordinator] 기존 캐시 없음. 최초 20개 Map-Reduce 요약 진행 -> bookId: {}", bookId);
+        //캐시 없는 경우: 최초 요약 진행
+        log.info("[ReviewCoordinator] 기존 캐시 없음. 최초 요약 진행 -> bookId: {}", bookId);
         return generateInitialSummary(bookId, cacheKey);
     }
 
@@ -72,14 +78,14 @@ public class ReviewCoordinator {
         for (List<Review> chunk : chunks) {
             partialSummaries.add(mapAgent.summarizeChunk(buildChunkText(chunk)));
         }
-        
+
         // Reduce 단계 수행
         String finalReport = reduceAgent.reduceSummaries(String.join("\n\n---\n\n", partialSummaries));
 
         // Redis 캐싱
         ReviewSummaryResponse response = new ReviewSummaryResponse(bookId, ReviewStatus.DONE, finalReport, null, latestReviewId);
         redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response), Duration.ofDays(1));
-        
+
         return response;
     }
 
@@ -99,13 +105,13 @@ public class ReviewCoordinator {
         for (List<Review> chunk : chunks) {
             newPartialSummaries.add(mapAgent.summarizeChunk(buildChunkText(chunk)));
         }
-        
+
         String combinedNewSummaries = String.join("\n\n---\n\n", newPartialSummaries);
 
         // 기존 요약 텍스트 + 신규 요약 텍스트 융합
         String fusionText = String.format(
-                "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 요약본] ---\n%s", 
-                oldSummaryText, 
+                "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 요약본] ---\n%s",
+                oldSummaryText,
                 combinedNewSummaries
         );
 
@@ -115,7 +121,7 @@ public class ReviewCoordinator {
         // 갱신된 정보 캐싱
         ReviewSummaryResponse updatedResponse = new ReviewSummaryResponse(bookId, ReviewStatus.DONE, updatedFinalReport, null, nextLatestReviewId);
         redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(updatedResponse), Duration.ofDays(1));
-        log.info("[ReviewCoordinator] Map-Reduce 증분 요약 완료 및 캐시 업데이트 -> bookId: {}", bookId);
+        log.info("[ReviewCoordinator] 증분 요약 완료 및 캐시 업데이트 -> bookId: {}", bookId);
 
         return updatedResponse;
     }

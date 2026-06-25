@@ -1,11 +1,14 @@
 package com.nhnacademy.springailibrarycore.book.strategy.impl;
 
+import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_BOOK_SEARCH;
+
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -25,6 +28,7 @@ public class KeywordSearchStrategy implements SearchStrategy {
     }
 
     @Override
+    @Cacheable(value = CACHE_BOOK_SEARCH, key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
     public Page<BookSearchResponse> search(
             Pageable pageable,
             BookSearchRequest request

@@ -3,14 +3,17 @@ package com.nhnacademy.springailibrarycore.book.strategy.impl;
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
+import com.nhnacademy.springailibrarycore.book.service.agent.recommendation.BookRecommendationAgent;
+import com.nhnacademy.springailibrarycore.book.service.cache.SemanticCacheService;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
-import java.util.Comparator;
+import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfBookReranker;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -21,15 +24,14 @@ import org.springframework.stereotype.Component;
  * 상위 Rerank K개의 도서만 반환합니다.
  */
 @Component
-@RequiredArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class RagSearchStrategy implements SearchStrategy {
+    private final RrfBookReranker rrfBookReranker;
+    private final EmbeddingSubAgent embeddingSubAgent;
+    private final BookRecommendationAgent bookRecommendationAgent;
+    private final SemanticCacheService semanticCacheService;
 
-    private static final int RETRIEVAL_K = 100;
-    private static final int RERANK_K = 5;
-    private static final double RRF_SCORE_THRESHOLD = 0.02;
-
-    private final HybridSearchStrategy hybridSearchStrategy;
 
     @Override
     public SearchType supports() {
@@ -41,43 +43,51 @@ public class RagSearchStrategy implements SearchStrategy {
             Pageable pageable,
             BookSearchRequest request
     ) {
-        Page<BookSearchResponse> retrievalResult =
-                hybridSearchStrategy.search(
-                        PageRequest.of(0, RETRIEVAL_K),
-                        request
-                );
+        String normalizedQuestion = request.keyword().trim();
+        float[] questionVector = request.vector() != null
+                ? request.vector()
+                : embeddingSubAgent.getEmbedding(normalizedQuestion);
 
-        List<BookSearchResponse> rankedBooks = retrievalResult.getContent()
-                .stream()
-                .filter(book -> book.rrfScore() != null)
-                .sorted(Comparator.comparing(
-                        BookSearchResponse::rrfScore
-                ).reversed())
-                .toList();
+        /* ============ 캐시 조회 ============*/
 
-        List<BookSearchResponse> topBooks = rankedBooks.stream()
-                .filter(book ->
-                        book.rrfScore() >= RRF_SCORE_THRESHOLD
-                )
-                .limit(RERANK_K)
-                .toList();
+        Optional<List<BookSearchResponse>> cachedResult = semanticCacheService.findCachedResult(
+                normalizedQuestion,
+                questionVector
+        );
+        // 캐시 존재하면 반환
+        if(cachedResult.isPresent()){
+            return new PageImpl<>(cachedResult.get(), pageable, cachedResult.get().size());
+        }
 
-        if (topBooks.isEmpty() && !rankedBooks.isEmpty()) {
-            topBooks = rankedBooks.stream()
-                    .limit(RERANK_K)
-                    .toList();
-            log.info(
-                    "[RAG Top-K] 임계값 통과 결과가 없어 상위 {}권을 fallback으로 사용",
-                    topBooks.size()
+        /* ============ 캐시 MISS → Hybrid Retrieval + RRF Rerank ============*/
+        log.info("[VectorCache] Cache MISS - Hybrid 검색 후 캐시 저장");
+        BookSearchRequest vectorizedRequest = new BookSearchRequest(
+                normalizedQuestion,
+                request.isbn(),
+                request.searchType(),
+                questionVector,
+                request.warmUp()
+        );
+        // --------------- RRF Rerank: 상위 5권 추출 ---------------
+        List<BookSearchResponse> topBooks = rrfBookReranker.reranker(vectorizedRequest);
+
+        if (topBooks.isEmpty()) {
+            log.info("[RAG] 검색 결과 없음 - 빈 페이지 반환");
+            return Page.empty(pageable);
+        }
+
+        // ---------- AI 추천 사유 부여 ----------
+        List<BookSearchResponse> enrichedBooks = bookRecommendationAgent.enrich(normalizedQuestion, topBooks);
+
+        /* ============ 결과를 캐시에 저장 ============*/
+        if(!enrichedBooks.isEmpty()){
+            semanticCacheService.save(
+                    normalizedQuestion,
+                    questionVector,
+                    enrichedBooks
             );
         }
 
-        log.info(
-                "[RAG Top-K] Retrieval {}권 → Rerank {}권",
-                retrievalResult.getNumberOfElements(),
-                topBooks.size()
-        );
-
-        return new PageImpl<>(topBooks);
+        return new PageImpl<>(enrichedBooks, pageable, enrichedBooks.size());
     }
 }
