@@ -3,17 +3,17 @@ package com.nhnacademy.springailibrarycore.book.strategy.impl;
 import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_BOOK_SEARCH;
 
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
 import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfFusionSubAgent;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
-import com.nhnacademy.springailibrarycore.util.PageableUtils;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -44,12 +44,12 @@ public class HybridSearchStrategy implements SearchStrategy {
 
     @Override
     @Cacheable(value = CACHE_BOOK_SEARCH, key = "#request.searchType().name() + '_' +#request.keyword() + '_' + #pageable.pageNumber")
-    public Page<BookSearchResponse> search(
+    public BookSearchPageResult search(
             Pageable pageable,
             BookSearchRequest request
     ) {
         if (!StringUtils.hasText(request.keyword())) {
-            return Page.empty(pageable);
+            return new BookSearchPageResult(List.of(), 0);
         }
 
         String keyword = request.keyword().trim();
@@ -70,7 +70,7 @@ public class HybridSearchStrategy implements SearchStrategy {
         // ---------------- VECTOR 검색 --------------
         float[] queryVector = request.vector() != null
                 ? request.vector()
-                : embeddingSubAgent.getEmbedding(keyword).vector();
+                : embeddingSubAgent.getEmbedding(keyword).getVector();
         BookSearchRequest vectorRequest = new BookSearchRequest(
                 keyword,
                 request.isbn(),
@@ -82,9 +82,16 @@ public class HybridSearchStrategy implements SearchStrategy {
                 bookRepository.vectorSearch(candidatePage, vectorRequest).getContent();
 
         // ---------------- (KEYWORD + VECTOR) -> rrf 점수를 반영한 도서 리스트 반환 ---------------
-        List<BookSearchResponse> rankedResults =
-                rrfFusionSubAgent.fuse(keywordResults, vectorResults);
+        List<BookSearchResponse> fusedList = rrfFusionSubAgent.fuse(keywordResults, vectorResults);
 
-        return PageableUtils.toPage(rankedResults, pageable);
+        // ---------------- 페이징 처리 ----------------
+        int start = Math.toIntExact(pageable.getOffset());
+        if (start >= fusedList.size()) {
+            return new BookSearchPageResult(List.of(), fusedList.size());
+        }
+        int end = Math.min(start + pageable.getPageSize(), fusedList.size());
+        List<BookSearchResponse> slicedContent = new ArrayList<>(fusedList.subList(start, end));
+
+        return new BookSearchPageResult(slicedContent, fusedList.size());
     }
 }

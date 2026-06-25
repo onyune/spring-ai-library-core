@@ -118,14 +118,15 @@ public class BookRecommendationAgent {
 
         for (int i = 0; i < books.size(); i++) {
             BookSearchResponse book = books.get(i);
-            String summaryReview = reviewService.getCachedSummary(book.getId()).summaryText();
+            var cachedSummary = reviewService.getCachedSummary(book.getId());
+            String summaryReview = (cachedSummary != null) ? nullSafe(cachedSummary.summaryText()) : "-";
 
             sb.append(i + 1).append(". ")
                     .append("[bookId=").append(book.getId()).append("] ")
                     .append("제목: ").append(book.getTitle()).append(" / ")
                     .append("저자: ").append(nullSafe(book.getAuthorName())).append(" / ")
                     .append("출판사: ").append(nullSafe(book.getPublisherName()))
-                    .append("리뷰요약: ").append(nullSafe(summaryReview));
+                    .append("리뷰요약: ").append(summaryReview);
 
             if (book.getBookContent() != null && !book.getBookContent().isBlank()) {
                 String truncated = book.getBookContent().length() > MAX_CONTENT_LENGTH

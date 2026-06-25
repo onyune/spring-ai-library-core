@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.repository.impl.search;
 
 import com.nhnacademy.springailibrarycore.book.domain.QBook;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.QBookSearchResponse;
 import com.querydsl.core.types.dsl.Expressions;
@@ -9,8 +10,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -23,13 +23,15 @@ public class VectorBookSearchRepository {
 
     private final JPAQueryFactory queryFactory;
     private final QBook book = QBook.book;
+    @Value("${vector.similarity.threshold}")
+    private double similarityThreshold;
 
-    public Page<BookSearchResponse> search(
+    public BookSearchPageResult search(
             Pageable pageable,
             float[] queryVector
     ) {
         if (queryVector == null || queryVector.length == 0) {
-            return Page.empty(pageable);
+            return new BookSearchPageResult(List.of(), 0);
         }
         /**
          * 벡터 -> 문자열 변환
@@ -61,28 +63,24 @@ public class VectorBookSearchRepository {
                         similarity
                 ))
                 .from(book)
-                .where(book.embedding.isNotNull()) // embedding이 없는 도서는 벡터 비교 불가능 함
+                .where(
+                        book.embedding.isNotNull(),
+                        similarity.goe(similarityThreshold) // 유사도가 THRESHOLD 이상인 것만 필터링 (Greater Or Equal)
+                ) // embedding이 없는 도서는 벡터 비교 불가능 함
                 .orderBy(similarity.desc()) // 유사도가 높은 순으로 정렬
                 .offset(pageable.getOffset()) // 페이지 범위만
                 .limit(pageable.getPageSize()) // "
                 .fetch();
-        /**
-         * 전체 도서 수
-         * 유사도 몇 이상을 넣을거면
-         * where(book.embedding.similarity.goe(0.3)): 0.3 이상만 출력(유사도)
-         * goe: [ >= 0.3]
-         * gt: [ > 0.3]
-         * lt: [ < 0.3]
-         * loe: [ <= 0.3]
-         * eq: [ = 0.3]
-         */
+
         Long total = queryFactory
                 .select(book.count())
                 .from(book)
-                .where(book.embedding.isNotNull())
+                .where(
+                        book.embedding.isNotNull(),
+                        similarity.goe(similarityThreshold) // 동일한 조건 추가
+                )
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total == null ? 0 : total);
-
+        return new BookSearchPageResult(content, total == null ? 0 : total);
     }
 }

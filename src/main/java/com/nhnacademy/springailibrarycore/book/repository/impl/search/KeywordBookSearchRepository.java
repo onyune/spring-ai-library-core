@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.repository.impl.search;
 
 import com.nhnacademy.springailibrarycore.book.domain.QBook;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.QBookSearchResponse;
@@ -11,8 +12,6 @@ import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
@@ -27,7 +26,7 @@ public class KeywordBookSearchRepository {
     private final JPAQueryFactory queryFactory;
     private final QBook book = QBook.book;
 
-    public Page<BookSearchResponse> search(
+    public BookSearchPageResult search(
             Pageable pageable,
             BookSearchRequest request
     ) {
@@ -66,7 +65,7 @@ public class KeywordBookSearchRepository {
                 .where(condition)
                 .fetchOne();
 
-        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+        return new BookSearchPageResult(content, total == null ? 0 : total);
     }
 
     // 검색어에 대한 관련도 순서 결정 -> 점수

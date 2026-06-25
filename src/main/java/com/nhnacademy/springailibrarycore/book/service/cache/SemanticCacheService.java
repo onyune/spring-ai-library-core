@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -50,7 +51,7 @@ public class SemanticCacheService {
         this.clock = clock;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<List<BookSearchResponse>> findCachedResult(
             String question,
             float[] questionVector
@@ -87,7 +88,7 @@ public class SemanticCacheService {
         return Optional.of(cachedRecommendations);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(
             String question,
             float[] questionVector,
