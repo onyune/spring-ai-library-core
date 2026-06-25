@@ -1,11 +1,19 @@
 package com.nhnacademy.springailibrarycore.config;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,6 +21,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,14 +34,11 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
  * 일반 캐싱(@Cacheable, @CacheEvict 등)용 Redis 설정입니다.
- **
- * 캐시 이름 & TTL
  *
  * bookSearch  - 도서 검색 결과 (10분)
  * bookDetail  - 도서 상세 정보 (1시간)
  * embedding   - 임베딩 벡터 결과 (24시간)
  * 그 외 기본값         - 30분
- * </ul>
  */
 @Configuration
 @EnableCaching
@@ -51,7 +58,7 @@ public class RedisCacheConfig {
     private int cacheDatabase;
 
     public static final String CACHE_BOOK_SEARCH  = "bookSearch";
-    public static final String CACHE_EMBEDDING    = "embedding";
+    public static final String CACHE_EMBEDDING    = "embedding_v1";
 
     /**
      * 일반 캐싱 전용
@@ -82,6 +89,12 @@ public class RedisCacheConfig {
         // JSON 직렬화 설정 (타입 정보 포함 → 역직렬화 시 원래 타입 복원)
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JavaTimeModule());
+        
+        // PageImpl 역직렬화 이슈 해결을 위한 커스텀 Deserializer 등록
+        SimpleModule pageModule = new SimpleModule();
+        pageModule.addDeserializer(PageImpl.class, new PageImplDeserializer());
+        mapper.registerModule(pageModule);
+
         mapper.activateDefaultTyping(
                 LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL,
@@ -109,5 +122,38 @@ public class RedisCacheConfig {
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+}
+
+/**
+ * Jackson이 Spring Data의 PageImpl을 역직렬화하지 못하는 현상을 해결하기 위한 커스텀 Deserializer.
+ */
+class PageImplDeserializer extends JsonDeserializer<PageImpl<?>> {
+    @Override
+    public PageImpl<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        ObjectMapper mapper = (ObjectMapper) p.getCodec();
+        JsonNode node = mapper.readTree(p);
+
+        // content 목록 역직렬화
+        List<Object> content = new ArrayList<>();
+        JsonNode contentNode = node.get("content");
+        if (contentNode != null && contentNode.isArray()) {
+            JsonNode actualElements = contentNode;
+            if (contentNode.size() == 2 && contentNode.get(0).isTextual() && contentNode.get(1).isArray()) {
+                actualElements = contentNode.get(1);
+            }
+            for (JsonNode elem : actualElements) {
+                // DefaultTyping이 켜져 있으므로 Object.class 지정 시 타입 메타데이터를 파싱하여 알맞은 객체로 환원됨
+                content.add(mapper.treeToValue(elem, Object.class));
+            }
+        }
+
+        // 페이지 메타데이터 파싱
+        int number = node.has("number") ? node.get("number").asInt() : 0;
+        int size = node.has("size") ? node.get("size").asInt() : (content.isEmpty() ? 10 : content.size());
+        long totalElements = node.has("totalElements") ? node.get("totalElements").asLong() : content.size();
+
+        return new PageImpl<>(content, PageRequest.of(number, size), totalElements);
     }
 }

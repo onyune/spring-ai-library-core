@@ -70,7 +70,7 @@ public class HybridSearchStrategy implements SearchStrategy {
         // ---------------- VECTOR 검색 --------------
         float[] queryVector = request.vector() != null
                 ? request.vector()
-                : embeddingSubAgent.getEmbedding(keyword);
+                : embeddingSubAgent.getEmbedding(keyword).vector();
         BookSearchRequest vectorRequest = new BookSearchRequest(
                 keyword,
                 request.isbn(),

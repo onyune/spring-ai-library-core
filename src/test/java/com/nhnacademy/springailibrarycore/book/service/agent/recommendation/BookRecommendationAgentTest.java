@@ -6,12 +6,12 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.nhnacademy.springailibrarycore.agent.ReviewCoordinator;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.ai.BookRecommendation;
 import com.nhnacademy.springailibrarycore.book.dto.ai.RecommendationResult;
 import com.nhnacademy.springailibrarycore.review.domain.ReviewStatus;
 import com.nhnacademy.springailibrarycore.review.dto.ReviewSummaryResponse;
+import com.nhnacademy.springailibrarycore.review.service.ReviewService;
 import java.math.BigDecimal;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ class BookRecommendationAgentTest {
     private ChatClient.Builder chatClientBuilder;
     private ChatClient.ChatClientRequestSpec requestSpec;
     private ChatClient.CallResponseSpec callResponseSpec;
-    private ReviewCoordinator reviewCoordinator;
+    private ReviewService reviewService;
 
     private BookRecommendationAgent agent;
 
@@ -35,7 +35,7 @@ class BookRecommendationAgentTest {
         chatClientBuilder = mock(ChatClient.Builder.class);
         requestSpec = mock(ChatClient.ChatClientRequestSpec.class);
         callResponseSpec = mock(ChatClient.CallResponseSpec.class);
-        reviewCoordinator = mock(ReviewCoordinator.class);
+        reviewService = mock(ReviewService.class);
 
         when(chatClientBuilder.defaultSystem(anyString())).thenReturn(chatClientBuilder);
         when(chatClientBuilder.build()).thenReturn(chatClient);
@@ -45,12 +45,12 @@ class BookRecommendationAgentTest {
         when(requestSpec.call()).thenReturn(callResponseSpec);
 
         // ReviewCoordinator Mock 동작 추가 (NullPointerException 방지)
-        when(reviewCoordinator.getOrGenerateSummary(any(Long.class))).thenAnswer(invocation -> {
+        when(reviewService.getCachedSummary(any(Long.class))).thenAnswer(invocation -> {
             Long bookId = invocation.getArgument(0);
             return new ReviewSummaryResponse(bookId, ReviewStatus.DONE, "리뷰 요약 내용", null, 1L);
         });
 
-        agent = new BookRecommendationAgent(chatClientBuilder, reviewCoordinator);
+        agent = new BookRecommendationAgent(chatClientBuilder, reviewService);
     }
 
     @Test
