@@ -10,6 +10,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
@@ -22,6 +23,8 @@ public class VectorBookSearchRepository {
 
     private final JPAQueryFactory queryFactory;
     private final QBook book = QBook.book;
+    @Value("${vector.similarity.threshold}")
+    private double similarityThreshold;
 
     public BookSearchPageResult search(
             Pageable pageable,
@@ -60,7 +63,10 @@ public class VectorBookSearchRepository {
                         similarity
                 ))
                 .from(book)
-                .where(book.embedding.isNotNull()) // embedding이 없는 도서는 벡터 비교 불가능 함
+                .where(
+                        book.embedding.isNotNull(),
+                        similarity.goe(similarityThreshold) // 유사도가 THRESHOLD 이상인 것만 필터링 (Greater Or Equal)
+                ) // embedding이 없는 도서는 벡터 비교 불가능 함
                 .orderBy(similarity.desc()) // 유사도가 높은 순으로 정렬
                 .offset(pageable.getOffset()) // 페이지 범위만
                 .limit(pageable.getPageSize()) // "
@@ -69,7 +75,10 @@ public class VectorBookSearchRepository {
         Long total = queryFactory
                 .select(book.count())
                 .from(book)
-                .where(book.embedding.isNotNull())
+                .where(
+                        book.embedding.isNotNull(),
+                        similarity.goe(similarityThreshold) // 동일한 조건 추가
+                )
                 .fetchOne();
 
         return new BookSearchPageResult(content, total == null ? 0 : total);

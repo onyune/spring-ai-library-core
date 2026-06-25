@@ -10,6 +10,7 @@ import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
 import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfFusionSubAgent;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -64,7 +65,7 @@ public class HybridSearchStrategy implements SearchStrategy {
         );
 
         List<BookSearchResponse> keywordResults =
-                bookRepository.search(candidatePage, keywordRequest).content();
+                bookRepository.search(candidatePage, keywordRequest).getContent();
 
         // ---------------- VECTOR 검색 --------------
         float[] queryVector = request.vector() != null
@@ -78,7 +79,7 @@ public class HybridSearchStrategy implements SearchStrategy {
                 request.warmUp()
         );
         List<BookSearchResponse> vectorResults =
-                bookRepository.vectorSearch(candidatePage, vectorRequest).content();
+                bookRepository.vectorSearch(candidatePage, vectorRequest).getContent();
 
         // ---------------- (KEYWORD + VECTOR) -> rrf 점수를 반영한 도서 리스트 반환 ---------------
         List<BookSearchResponse> fusedList = rrfFusionSubAgent.fuse(keywordResults, vectorResults);
@@ -89,7 +90,7 @@ public class HybridSearchStrategy implements SearchStrategy {
             return new BookSearchPageResult(List.of(), fusedList.size());
         }
         int end = Math.min(start + pageable.getPageSize(), fusedList.size());
-        List<BookSearchResponse> slicedContent = fusedList.subList(start, end);
+        List<BookSearchResponse> slicedContent = new ArrayList<>(fusedList.subList(start, end));
 
         return new BookSearchPageResult(slicedContent, fusedList.size());
     }

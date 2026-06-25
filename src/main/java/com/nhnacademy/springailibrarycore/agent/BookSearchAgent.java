@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional(readOnly = true)
+@Slf4j
 public class BookSearchAgent {
     private final Map<SearchType, SearchStrategy> strategyMap;
     private final AutoSearchAgent autoSearchAgent;
@@ -64,9 +66,13 @@ public class BookSearchAgent {
         }
 
         SearchStrategy strategy = strategyMap.get(targetSearchType);
+
         if(strategy==null){
             throw new NotFoundSearchStrategyException(bookSearchRequest.searchType());
         }
+
+        log.info("[BookSearchAgent] 선택된 전략: {}", strategy.getClass().getName());
+        log.info("[BookSearchAgent] 사용자 질문: {}", targetKeyword);
 
         BookSearchRequest refinedRequest = new BookSearchRequest(
                 targetKeyword,
@@ -77,7 +83,7 @@ public class BookSearchAgent {
         );
 
         BookSearchPageResult result = strategy.search(pageable, refinedRequest);
-        Page<BookSearchResponse> books = new PageImpl<>(result.content(), pageable, result.totalElements());
+        Page<BookSearchResponse> books = new PageImpl<>(result.getContent(), pageable, result.getTotalElements());
         return new BookSearchResult(books);
     }
 }

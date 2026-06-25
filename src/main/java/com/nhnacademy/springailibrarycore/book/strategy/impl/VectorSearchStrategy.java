@@ -54,7 +54,7 @@ public class VectorSearchStrategy implements SearchStrategy {
                 queryVector,
                 request.warmUp()
         );
-
+        log.info("[VectorSearchStrategy] 벡터 서치 시작 - keyword: {}", keyword);
         return bookRepository.vectorSearch(pageable, dbRequest);
     }
 }
