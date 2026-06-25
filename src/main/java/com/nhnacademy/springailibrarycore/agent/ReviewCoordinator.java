@@ -51,7 +51,7 @@ public class ReviewCoordinator {
 
             if(lastReviewId != null) {
                 log.info("[ReviewCoordinator] 기존 캐시 발견. 중분 요약 시작 -> bookId: {} ", bookId);
-                return generateIncrementalSummary(bookId, cachedResponse, lastReviewId, cacheKey);
+                return generateIncrementalSummary(bookId, cachedResponse, cacheKey);
             }
         }
 
@@ -73,6 +73,7 @@ public class ReviewCoordinator {
         Long latestReviewId = reviews.stream().mapToLong(Review::getId).max().orElse(0L);
 
         // 5개씩 청크 분할 및 Map 단계 수행
+        //TODO 추후 size 조절 테스트
         List<List<Review>> chunks = partition(reviews, 5);
         List<String> partialSummaries = new ArrayList<>();
         for (List<Review> chunk : chunks) {
@@ -92,14 +93,16 @@ public class ReviewCoordinator {
     /**
      * 신규 리뷰들을 5개 단위로 청크 분할 요약하여 기존 요약과 병합하는 증분 요약 프로세스 (Map-Reduce)
      */
-    private ReviewSummaryResponse generateIncrementalSummary(Long bookId, ReviewSummaryResponse cachedResponse, Long lastReviewId, String cacheKey) throws JsonProcessingException {
+    private ReviewSummaryResponse generateIncrementalSummary(Long bookId, ReviewSummaryResponse cachedResponse, String cacheKey) throws JsonProcessingException {
         String oldSummaryText = cachedResponse.summaryText();
+        Long lastReviewId = cachedResponse.lastProcessReviewId();
 
         // lastReviewId 이후로 생성된 신규 리뷰들 획득
         List<Review> newReviews = reviewRepository.findByBookIdAndIdGreaterThanOrderByIdDesc(bookId, lastReviewId);
         Long nextLatestReviewId = newReviews.stream().mapToLong(Review::getId).max().orElse(lastReviewId);
 
         // 신규 리뷰들을 5개씩 청크 분할 및 Map 단계 수행
+        //TODO 추후 size 조절 테스트
         List<List<Review>> chunks = partition(newReviews, 5);
         List<String> newPartialSummaries = new ArrayList<>();
         for (List<Review> chunk : chunks) {
