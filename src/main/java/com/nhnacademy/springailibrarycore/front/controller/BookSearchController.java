@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
 @RequiredArgsConstructor
@@ -20,11 +21,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 public class BookSearchController {
     private final BookSearchAgent bookSearchAgent;
 
+    @GetMapping("/")
+    public String index(@ModelAttribute("request") BookSearchRequest bookSearchRequest) {
+
+        return "index";
+    }
+
     @PostMapping("/search")
     public String searchBook(@ModelAttribute BookSearchRequest bookSearchRequest,
                              @PageableDefault(size = 24)Pageable pageable,
                              Model model){
         long startedAt = System.nanoTime();
+        log.info("[BookSearchController] - 사용자 검색 검색어: {}, 검색 방식: {}", bookSearchRequest.keyword(), bookSearchRequest.searchType());
+
         BookSearchResult result = bookSearchAgent.searchBooks(pageable, bookSearchRequest);
         double searchTimeSeconds = (System.nanoTime() - startedAt) / 1_000_000_000.0;
 

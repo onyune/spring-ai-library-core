@@ -44,7 +44,7 @@ public class VectorSearchStrategy implements SearchStrategy {
         String keyword = request.keyword().trim();
         float[] queryVector = request.vector() != null
                 ? request.vector()
-                : embeddingSubAgent.getEmbedding(keyword);
+                : embeddingSubAgent.getEmbedding(keyword).vector();
 
 
         BookSearchRequest dbRequest = new BookSearchRequest(

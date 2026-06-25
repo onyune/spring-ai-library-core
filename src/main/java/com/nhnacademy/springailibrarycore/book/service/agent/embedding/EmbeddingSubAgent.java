@@ -2,6 +2,7 @@ package com.nhnacademy.springailibrarycore.book.service.agent.embedding;
 
 import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_EMBEDDING;
 
+import com.nhnacademy.springailibrarycore.book.dto.EmbeddingResponse;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
@@ -29,7 +30,7 @@ public class EmbeddingSubAgent {
      * @return 임베딩 벡터
      */
     @Cacheable(value = CACHE_EMBEDDING, key = "#text")
-    public float[] getEmbedding(String text) {
-        return embeddingModel.embed(text);
+    public EmbeddingResponse getEmbedding(String text) {
+        return new EmbeddingResponse(embeddingModel.embed(text));
     }
 }
