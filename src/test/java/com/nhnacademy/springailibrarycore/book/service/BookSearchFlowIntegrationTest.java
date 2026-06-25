@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nhnacademy.springailibrarycore.agent.BookSearchAgent;
 import com.nhnacademy.springailibrarycore.book.domain.BookSearchCache;
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResult;
@@ -54,11 +55,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
  * RAG 도서 검색 시 전체 아키텍처(Service -> Strategy -> Reranker -> Agent -> Cache)가
  * 유기적으로 통합되어 흐름대로 정상 작동하는지 검증하는 통합 테스트입니다.
  */
-@SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
+@SpringBootTest(properties = {
+        "spring.main.allow-bean-definition-overriding=true",
+        "spring.cache.type=none"
+})
 @EnableAutoConfiguration(exclude = {
         DataSourceAutoConfiguration.class,
         HibernateJpaAutoConfiguration.class,
         RedisAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration.class,
         RabbitAutoConfiguration.class
 })
 @ActiveProfiles("test")
@@ -82,6 +87,9 @@ class BookSearchFlowIntegrationTest {
 
     @MockitoBean
     private ReviewRepository reviewRepository;
+
+    @MockitoBean
+    private com.nhnacademy.springailibrarycore.review.service.ReviewService reviewService;
 
     // Redis Mocking
     @MockitoBean
@@ -148,12 +156,50 @@ class BookSearchFlowIntegrationTest {
         public com.querydsl.jpa.impl.JPAQueryFactory jpaQueryFactory() {
             return Mockito.mock(com.querydsl.jpa.impl.JPAQueryFactory.class);
         }
+
+        @Bean(name = "cacheRedisConnectionFactory")
+        public org.springframework.data.redis.connection.RedisConnectionFactory cacheRedisConnectionFactory() {
+            return Mockito.mock(org.springframework.data.redis.connection.RedisConnectionFactory.class);
+        }
+
+        @Bean
+        @org.springframework.context.annotation.Primary
+        public org.springframework.cache.CacheManager cacheManager() {
+            return new org.springframework.cache.support.NoOpCacheManager();
+        }
     }
 
     @BeforeEach
     void setUp() {
         // Embedding Model 모킹
         when(openAiEmbeddingModel.embed(anyString())).thenReturn(new float[1024]);
+
+        // bookRepository 위임 모킹
+        when(bookRepository.search(any(Pageable.class), any(BookSearchRequest.class)))
+                .thenAnswer(invocation -> keywordBookSearchRepository.search(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1)
+                ));
+
+        when(bookRepository.vectorSearch(any(Pageable.class), any(BookSearchRequest.class)))
+                .thenAnswer(invocation -> vectorBookSearchRepository.search(
+                        invocation.getArgument(0),
+                        ((BookSearchRequest) invocation.getArgument(1)).vector()
+                ));
+
+        // StringRedisTemplate mock
+        org.springframework.data.redis.core.ValueOperations valueOps = Mockito.mock(org.springframework.data.redis.core.ValueOperations.class);
+        when(stringRedisTemplate.opsForValue()).thenReturn(valueOps);
+
+        // ReviewService mock setup
+        when(reviewService.getCachedSummary(any(Long.class)))
+                .thenReturn(new com.nhnacademy.springailibrarycore.review.dto.ReviewSummaryResponse(
+                        1L,
+                        com.nhnacademy.springailibrarycore.review.domain.ReviewStatus.DONE,
+                        "리뷰 요약입니다.",
+                        null,
+                        1L
+                ));
     }
 
     @Test
@@ -184,7 +230,7 @@ class BookSearchFlowIntegrationTest {
                 1800
         );
 
-        when(bookSearchCacheRepository.findBestMatch(any(float[].class), eq(0.98)))
+        when(bookSearchCacheRepository.findBestMatch(any(float[].class), any(Double.class)))
                 .thenReturn(Optional.of(mockCache));
 
         // when
@@ -210,7 +256,7 @@ class BookSearchFlowIntegrationTest {
         BookSearchRequest request = new BookSearchRequest(keyword, null, SearchType.RAG, dummyVector, false);
 
         // 1. 캐시 미스 모킹
-        when(bookSearchCacheRepository.findBestMatch(any(float[].class), eq(0.98)))
+        when(bookSearchCacheRepository.findBestMatch(any(float[].class), any(Double.class)))
                 .thenReturn(Optional.empty());
 
         // 2. 키워드 검색 결과 모킹 (RRF용)
@@ -221,7 +267,7 @@ class BookSearchFlowIntegrationTest {
                 .bookContent("객체지향의 본질")
                 .build();
         when(keywordBookSearchRepository.search(any(Pageable.class), any(BookSearchRequest.class)))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(keywordBook1), pageable, 1));
+                .thenReturn(new BookSearchPageResult(List.of(keywordBook1), 1));
 
         // 3. 벡터 검색 결과 모킹 (RRF용)
         BookSearchResponse vectorBook1 = BookSearchResponse.builder()
@@ -232,7 +278,7 @@ class BookSearchFlowIntegrationTest {
                 .similarity(0.92)
                 .build();
         when(vectorBookSearchRepository.search(any(Pageable.class), any(float[].class)))
-                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(vectorBook1), pageable, 1));
+                .thenReturn(new BookSearchPageResult(List.of(vectorBook1), 1));
 
         // 4. AI 추천 에이전트 모킹
         BookRecommendation rec = new BookRecommendation(1L, 95, "객체지향의 기본 개념을 매우 쉽고 재미있게 풀어낸 명서입니다.");

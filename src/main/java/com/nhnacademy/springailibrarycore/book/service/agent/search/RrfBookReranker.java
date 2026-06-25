@@ -1,5 +1,6 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.search;
 
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.strategy.impl.HybridSearchStrategy;
@@ -7,7 +8,6 @@ import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
@@ -26,13 +26,13 @@ public class RrfBookReranker {
 
     public List<BookSearchResponse> reranker(BookSearchRequest request){
         // ------- HYBRID 전략 으로 도서 리스트 검색 -------
-        Page<BookSearchResponse> retrievalResult =
+        BookSearchPageResult retrievalResult =
                 hybridSearchStrategy.search(
                         PageRequest.of(0, RETRIEVAL_K),
                         request
                 );
         // -------- rrf score가 높은 순으로 내림차순 정렬 ----------
-        List<BookSearchResponse> rankedBooks = retrievalResult.getContent()
+        List<BookSearchResponse> rankedBooks = retrievalResult.content()
                 .stream()
                 .filter(book -> book.getRrfScore() != null)
                 .sorted(Comparator.comparing(
@@ -56,7 +56,7 @@ public class RrfBookReranker {
             log.info("[RAG Top-K] 임계값 통과 결과가 없어 상위 {}권을 fallback으로 사용", topBooks.size());
         }
 
-        log.info("[RAG Top-K] Retrieval {}권 → Rerank {}권", retrievalResult.getNumberOfElements(), topBooks.size());
+        log.info("[RAG Top-K] Retrieval {}권 → Rerank {}권", retrievalResult.content().size(), topBooks.size());
         return topBooks;
     }
 }

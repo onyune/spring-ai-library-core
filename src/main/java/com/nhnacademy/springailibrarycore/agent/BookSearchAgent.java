@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.agent;
 
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResult;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,7 +76,8 @@ public class BookSearchAgent {
                 bookSearchRequest.warmUp()
         );
 
-        Page<BookSearchResponse> books = strategy.search(pageable,refinedRequest);
+        BookSearchPageResult result = strategy.search(pageable, refinedRequest);
+        Page<BookSearchResponse> books = new PageImpl<>(result.content(), pageable, result.totalElements());
         return new BookSearchResult(books);
     }
 }

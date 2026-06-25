@@ -1,16 +1,15 @@
 package com.nhnacademy.springailibrarycore.book.repository;
 
 
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
-import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.NoRepositoryBean;
 
 @NoRepositoryBean
 public interface BookRepositoryCustom {
 
-    Page<BookSearchResponse> search(Pageable pageable, BookSearchRequest request);
+    BookSearchPageResult search(Pageable pageable, BookSearchRequest request);
 
-    Page<BookSearchResponse> vectorSearch(Pageable pageable, BookSearchRequest request);
+    BookSearchPageResult vectorSearch(Pageable pageable, BookSearchRequest request);
 }

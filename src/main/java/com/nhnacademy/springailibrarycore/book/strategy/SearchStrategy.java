@@ -1,9 +1,8 @@
 package com.nhnacademy.springailibrarycore.book.strategy;
 
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
-import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 /**
@@ -15,7 +14,7 @@ public interface SearchStrategy {
 
     SearchType supports();
 
-    Page<BookSearchResponse> search(
+    BookSearchPageResult search(
             Pageable pageable,
             BookSearchRequest request
     );

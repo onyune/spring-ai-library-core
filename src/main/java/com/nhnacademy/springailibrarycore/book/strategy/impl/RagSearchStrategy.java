@@ -1,19 +1,18 @@
 package com.nhnacademy.springailibrarycore.book.strategy.impl;
 
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
+import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.service.agent.embedding.EmbeddingSubAgent;
 import com.nhnacademy.springailibrarycore.book.service.agent.recommendation.BookRecommendationAgent;
+import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfBookReranker;
 import com.nhnacademy.springailibrarycore.book.service.cache.SemanticCacheService;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
-import com.nhnacademy.springailibrarycore.book.service.agent.search.RrfBookReranker;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
@@ -39,14 +38,14 @@ public class RagSearchStrategy implements SearchStrategy {
     }
 
     @Override
-    public Page<BookSearchResponse> search(
+    public BookSearchPageResult search(
             Pageable pageable,
             BookSearchRequest request
     ) {
         String normalizedQuestion = request.keyword().trim();
         float[] questionVector = request.vector() != null
                 ? request.vector()
-                : embeddingSubAgent.getEmbedding(normalizedQuestion).vector();
+                : embeddingSubAgent.getEmbedding(normalizedQuestion).getVector();
 
         /* ============ 캐시 조회 ============*/
 
@@ -56,7 +55,7 @@ public class RagSearchStrategy implements SearchStrategy {
         );
         // 캐시 존재하면 반환
         if(cachedResult.isPresent()){
-            return new PageImpl<>(cachedResult.get(), pageable, cachedResult.get().size());
+            return new BookSearchPageResult(cachedResult.get(), cachedResult.get().size());
         }
 
         /* ============ 캐시 MISS → Hybrid Retrieval + RRF Rerank ============*/
@@ -72,8 +71,8 @@ public class RagSearchStrategy implements SearchStrategy {
         List<BookSearchResponse> topBooks = rrfBookReranker.reranker(vectorizedRequest);
 
         if (topBooks.isEmpty()) {
-            log.info("[RAG] 검색 결과 없음 - 빈 페이지 반환");
-            return Page.empty(pageable);
+            log.info("[RAG] 검색 결과 없음 - 빈 리스트 반환");
+            return new BookSearchPageResult(List.of(), 0);
         }
 
         // ---------- AI 추천 사유 부여 ----------
@@ -88,6 +87,6 @@ public class RagSearchStrategy implements SearchStrategy {
             );
         }
 
-        return new PageImpl<>(enrichedBooks, pageable, enrichedBooks.size());
+        return new BookSearchPageResult(enrichedBooks, enrichedBooks.size());
     }
 }
