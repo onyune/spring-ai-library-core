@@ -27,5 +27,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByBookIdAndIdGreaterThanOrderByIdDesc(Long bookId, Long lastReviewId);
 
     long countByBookIdAndIdGreaterThan(Long bookId, Long lastReviewId);
+
+    boolean existsByBookIdAndReviewerId(Long bookId, String reviewerId);
 }
 

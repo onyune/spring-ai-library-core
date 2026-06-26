@@ -2,7 +2,9 @@ package com.nhnacademy.springailibrarycore.front.controller;
 
 import com.nhnacademy.springailibrarycore.book.dto.BookDetailResponse;
 import com.nhnacademy.springailibrarycore.book.service.BookService;
+import com.nhnacademy.springailibrarycore.review.dto.ReviewCreateRequest;
 import com.nhnacademy.springailibrarycore.review.service.ReviewService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,6 +62,23 @@ public class BookController {
         log.info("[BookController] 리뷰 등록 요청 (DUMMY): bookId={}, rating={}, content={}", id, rating, content);
         // 실제 저장은 지원하지 않으므로 플래시 속성에 오류/안내 메시지를 담아 리다이렉트
         redirectAttributes.addFlashAttribute("message", "현재 리뷰 등록 기능은 준비 중입니다. 조만간 만나보실 수 있습니다!");
+        return "redirect:/books/" + id;
+    }
+
+    /**
+     * 특정 도서에 리뷰를 등록합니다.
+     *
+     * @param id        도서 ID
+     * @param request   리뷰 등록 요청 정보
+     * @return          리뷰 등록 후 해당 도서 상세페이지로 리다이렉트
+     */
+    @PostMapping("/{id}/reviews")
+    public String createReview(
+            @PathVariable Long id,
+            @Valid ReviewCreateRequest request){
+
+        reviewService.createReview(id, request);
+
         return "redirect:/books/" + id;
     }
 }

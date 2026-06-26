@@ -2,8 +2,11 @@ package com.nhnacademy.springailibrarycore.review.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nhnacademy.springailibrarycore.book.domain.Book;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.config.RabbitConfig;
+import com.nhnacademy.springailibrarycore.review.domain.Review;
+import com.nhnacademy.springailibrarycore.review.dto.ReviewCreateRequest;
 import com.nhnacademy.springailibrarycore.review.dto.ReviewSummaryResponse;
 import com.nhnacademy.springailibrarycore.review.domain.ReviewStatus;
 import com.nhnacademy.springailibrarycore.review.exception.ReviewServiceException;
@@ -19,6 +22,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import com.nhnacademy.springailibrarycore.review.dto.ReviewResponse;
+
+import java.util.UUID;
 
 /**
  *
@@ -125,6 +130,40 @@ public class ReviewService {
 
         return reviewRepository.findByBookId(bookId, pageable)
                 .map(ReviewResponse::from);
+    }
+
+
+    /**
+     * 리뷰 등록 서비스 한 책당 한 명의 리뷰 작성 가능
+     *
+     * 로그인 기능이 없으므로 임시 reviewerId를 UUID로 생성한다.
+     * 현재 구조에서는 요청마다 새로운 reviewerId가 생성된다.
+     * 추후 로그인/회원 기능이 붙으면 request 또는 인증 정보에서 reviewerId를 받아 저장한다.
+     */
+    @Transactional
+    public Long createReview(Long bookId, ReviewCreateRequest request) {
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new ReviewServiceException("존재하지 않는 도서 ID입니다. (ID: " + bookId + ")", HttpStatus.NOT_FOUND));
+
+        String reviewerId = "guest-" + UUID.randomUUID();
+
+        if(reviewRepository.existsByBookIdAndReviewerId(bookId,reviewerId)) {
+            throw new ReviewServiceException("이미 이 도서에 리뷰를 작성했습니다. reviewerId=" + reviewerId + ", bookId=" + bookId, HttpStatus.CONFLICT);
+        }
+
+        Review review = new Review(
+                book,
+                reviewerId,
+                request.rating(),
+                request.content()
+
+        );
+
+
+        Review savedReview = reviewRepository.save(review);
+
+
+        return savedReview.getId();
     }
 }
 
