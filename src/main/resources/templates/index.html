@@ -16,7 +16,6 @@
     <div class="search-form-container" th:classappend="${books == null} ? 'hero-search-container' : 'compact-search-container'">
         <!-- 최초 진입 시 보이는 히어로 웰컴 영역 -->
         <div th:if="${books == null}" class="hero-welcome text-center">
-            <div class="hero-icon mb-3">🔮</div>
             <h1 class="hero-title fw-bold">스마트 AI 도서 검색</h1>
             <p class="hero-subtitle text-muted">원하는 키워드나 질문을 입력해 보세요. AI가 가장 적합한 책을 추천해 드립니다.</p>
         </div>
