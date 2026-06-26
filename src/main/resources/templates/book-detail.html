@@ -14,7 +14,7 @@
 
         <!-- 뒤로가기 -->
         <div class="mb-4">
-            <a href="/" class="btn-back">
+            <a href="/search" class="btn-back">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
                      stroke-width="2.5" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                     <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -88,30 +88,17 @@
                 <!-- 형태 탭 -->
                 <div class="book-format-tabs mb-5">
                     <div class="format-tab active">종이책</div>
-                    <div class="format-tab text-muted">
-                        전자책
-                        <small th:if="${bookDetail.price != null}"
-                               th:text="${' ' + #numbers.formatInteger(bookDetail.price * 0.8, 0, 'COMMA') + '원'}"></small>
-                    </div>
                 </div>
 
                 <!-- 상세 정보 테이블 -->
                 <div class="info-table">
 
-                    <div class="info-row" th:if="${bookDetail.price != null}">
-                        <div class="info-label">정가</div>
-                        <div class="info-value">
-                            <span class="price-strike"
-                                  th:text="${#numbers.formatInteger(bookDetail.price * 1.1, 0, 'COMMA') + '원'}">0원</span>
-                        </div>
-                    </div>
 
                     <div class="info-row" style="align-items:center;">
                         <div class="info-label">판매가</div>
                         <div class="info-value d-flex align-items-baseline gap-1">
                             <span class="price-main-num"
                                   th:text="${bookDetail.price != null ? #numbers.formatInteger(bookDetail.price, 0, 'COMMA') + '원' : '가격 미정'}">0원</span>
-                            <span class="price-discount" th:if="${bookDetail.price != null}">(10% 할인)</span>
                         </div>
                     </div>
 
