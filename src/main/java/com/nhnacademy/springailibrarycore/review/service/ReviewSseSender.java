@@ -27,7 +27,7 @@ public class ReviewSseSender {
                     .data("SSE Connection  established. Processing review summary...")
             );
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            log.error("[ReviewSseSender - addEmitter]  초기 연결 메시지 전송 실패 (클라이언트 조기 이탈 의심) 도서 ID:{}", bookId);
         }
     }
 
@@ -43,8 +43,13 @@ public class ReviewSseSender {
                         .name("review-summary")
                         .data(response));
                 emitter.complete();
-            } catch (IOException e) {
+            } catch (IllegalStateException | IOException e) {
+                removeEmitter(bookId, emitter);
+                log.debug("[ReviewSseSender] 클라이언트 연결 종료됨. 도서 ID:{}",bookId);
+            }catch (Exception e){
+                log.error("[ReviewSseSender] SSE 전송 중 심각한 오류 발생. 도서 ID:{}", bookId);
                 emitter.completeWithError(e);
+                removeEmitter(bookId, emitter);
             }
         }
     }

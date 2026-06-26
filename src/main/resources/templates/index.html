@@ -4,200 +4,214 @@
       layout:decorate="~{layouts/default}">
 <head>
     <meta charset="UTF-8">
-    <title>AI 도서관 - 프리미엄 도서 검색</title>
-    <!-- 세련된 커스텀 스타일시트 연결 -->
-    <link rel="stylesheet" th:href="@{/css/index.css}">
+    <title>Ai-Library-team4 — AI 도서 검색</title>
 </head>
 <body>
 
 <div layout:fragment="content">
-    
-    <!-- 검색 폼 컨테이너 (최초 진입 시 hero 모드, 결과 조회 시 compact 모드) -->
-    <div class="search-form-container" th:classappend="${books == null} ? 'hero-search-container' : 'compact-search-container'">
-        <!-- 최초 진입 시 보이는 히어로 웰컴 영역 -->
-        <div th:if="${books == null}" class="hero-welcome text-center">
-            <h1 class="hero-title fw-bold">스마트 AI 도서 검색</h1>
-            <p class="hero-subtitle text-muted">원하는 키워드나 질문을 입력해 보세요. AI가 가장 적합한 책을 추천해 드립니다.</p>
-        </div>
+    <div class="container py-4">
 
-        <!-- 결과 노출 시 보이는 슬림 헤더 영역 -->
-        <div th:unless="${books == null}" class="compact-header mb-3">
-            <h2 class="compact-title fw-bold m-0">AI 도서 검색</h2>
-        </div>
-        
-        <form id="searchForm" th:action="@{/search}" method="post" class="search-form">
-            <!-- 페이지네이션을 처리하기 위한 hidden 필드 -->
-            <input type="hidden" name="page" id="pageNumber" th:value="${page != null ? page.number : 0}">
-            
-            <div class="search-row">
-                <!-- 검색 방식 선택 -->
-                <div class="search-col-type">
-                    <label class="form-label text-muted small fw-bold mb-1">검색 방식</label>
-                    <select name="searchType" class="form-select">
-                        <option value="KEYWORD" th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).KEYWORD}">키워드 검색</option>
-                        <option value="VECTOR" th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).VECTOR}">벡터(유사도) 검색</option>
-                        <option value="HYBRID" th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).HYBRID}">하이브리드 검색</option>
-                        <option value="RAG" th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).RAG}">AI(RAG) 검색</option>
-                        <option value="AUTO" th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).AUTO}">자동 검색</option>
-                    </select>
-                </div>
-                
-                <!-- 검색 키워드 -->
-                <div class="search-col-keyword">
-                    <label class="form-label text-muted small fw-bold mb-1">검색 키워드</label>
-                    <input type="text" name="keyword" class="form-control" placeholder="도서 제목, 저자, 내용 키워드 또는 추천 질문 입력..." 
-                           th:value="${request != null ? request.keyword : ''}" required>
-                </div>
-                
-                <!-- ISBN 입력 (선택) -->
-                <div class="search-col-isbn">
-                    <label class="form-label text-muted small fw-bold mb-1">ISBN (선택)</label>
-                    <input type="text" name="isbn" class="form-control" placeholder="ISBN 번호" 
-                           th:value="${request != null ? request.isbn : ''}">
-                </div>
-                
-                <!-- 검색 실행 버튼 -->
-                <div class="search-col-btn">
-                    <button type="submit" class="btn btn-primary fw-bold w-100">검색</button>
-                </div>
+        <!-- ══ 검색 폼 ══════════════════════════════════════════ -->
+        <div class="search-form-container"
+             th:classappend="${books == null} ? 'hero-search-container' : 'compact-search-container'">
+
+            <!-- Hero 웰컴 영역 -->
+            <div th:if="${books == null}" class="hero-welcome">
+                <h1 class="hero-title">스마트 AI 도서 검색</h1>
+                <p class="hero-subtitle">원하는 키워드나 질문을 입력하세요. AI가 가장 적합한 책을 찾아드립니다.</p>
             </div>
-        </form>
-    </div>
 
-    <!-- 모던한 블러 필터 적용 로딩 오버레이 -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner-card">
-            <div class="spinner-glow">
-                <div class="spinner-border text-primary" role="status" style="width: 3.5rem; height: 3.5rem; border-width: 0.25em;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
+            <!-- Compact 헤더 -->
+            <div th:unless="${books == null}" class="compact-header">
+                <h2 class="compact-title m-0">AI 도서 검색</h2>
             </div>
-            <h4 class="fw-bold text-dark mb-2">도서 분석 및 추천 중</h4>
-            <p class="text-muted small mb-0">
-                AI 모델이 적합한 도서를 탐색하고 추천 의견을 작성하는 중입니다. 잠시만 기다려주세요.
-            </p>
-        </div>
-    </div>
 
-    <!-- 검색 결과 영역 -->
-    <div th:if="${books != null}">
-        
-        <!-- 결과 메타 서머리 -->
-        <div class="mb-4 d-flex justify-content-between align-items-center">
-            <div>
-                <h3 class="fw-bold text-dark mb-0 d-inline-block">검색 결과</h3>
-                <span class="ms-2 badge bg-blue-lt text-blue py-2 px-3 fw-bold" th:text="${page.totalElements + '권 검색됨'}">0권 검색됨</span>
-            </div>
-            <div th:if="${searchTime != null}" class="text-muted small">
-                검색 속도: <span class="badge bg-secondary-lt fw-normal text-secondary py-1 px-2" th:text="${searchTime + '초'}">0.000초</span>
-            </div>
-        </div>
+            <form id="searchForm" th:action="@{/search}" method="post" class="search-form">
+                <input type="hidden" name="page" id="pageNumber" th:value="${page != null ? page.number : 0}">
 
-        <!-- 결과가 전혀 없을 때 -->
-        <div th:if="${books.isEmpty()}" class="no-results-banner text-center py-5">
-            <div class="banner-icon mb-3">🔍</div>
-            <h4 class="fw-bold text-dark">검색된 도서가 없습니다</h4>
-            <p class="text-muted small mb-0">입력하신 키워드 혹은 ISBN을 확인하거나, 검색 조건을 변경해보세요.</p>
-        </div>
-
-        <!-- 도서 카드 템플릿 그리드 -->
-        <div th:if="${!books.isEmpty()}" class="row row-cards g-4">
-            <div th:each="book : ${books}" class="col-md-6 col-lg-4 col-xl-3">
-                <div class="card h-100 book-card shadow-sm border-0">
-                    
-                    <!-- 지표별 점수 뱃지 (우상단) -->
-                    <div class="card-badges">
-                        <span th:if="${book.relevance != null}" class="badge bg-green text-white" th:text="${'AI 연관도 ' + book.relevance + '점'}">AI 연관도 90점</span>
-                        <span th:if="${book.similarity != null}" class="badge bg-blue text-white" th:text="${'유사도 ' + #numbers.formatPercent(book.similarity, 1, 0)}">유사도 85%</span>
-                        <span th:if="${book.rrfScore != null}" class="badge bg-purple text-white" th:text="${'RRF ' + #numbers.formatDecimal(book.rrfScore, 1, 3)}">RRF 0.035</span>
+                <div class="search-row">
+                    <!-- 검색 방식 -->
+                    <div class="search-col-type">
+                        <label class="form-label">검색 방식</label>
+                        <select name="searchType" class="form-select">
+                            <option value="KEYWORD"
+                                    th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).KEYWORD}">
+                                키워드
+                            </option>
+                            <option value="VECTOR"
+                                    th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).VECTOR}">
+                                벡터 유사도
+                            </option>
+                            <option value="HYBRID"
+                                    th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).HYBRID}">
+                                하이브리드
+                            </option>
+                            <option value="RAG"
+                                    th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).RAG}">
+                                AI (RAG)
+                            </option>
+                            <option value="AUTO"
+                                    th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).AUTO}">
+                                자동
+                            </option>
+                        </select>
                     </div>
-                    
-                    <!-- 도서 이미지 영역 -->
-                    <div class="book-image-container d-flex align-items-center justify-content-center">
-                        <a th:href="@{/books/{id}(id=${book.id})}" class="d-block text-center w-100">
-                            <img th:src="${book.imageUrl != null && !book.imageUrl.isEmpty() ? book.imageUrl : 'https://placehold.co/150x210?text=No+Cover'}" 
-                                 class="book-img" th:alt="${book.title}" 
-                                 onerror="this.onerror=null; this.src='https://placehold.co/150x210?text=No+Cover';">
-                        </a>
+
+                    <!-- 키워드 -->
+                    <div class="search-col-keyword">
+                        <label class="form-label">검색 키워드</label>
+                        <input type="text" name="keyword" class="form-control"
+                               placeholder="제목, 저자, 내용 키워드 또는 질문..."
+                               th:value="${request != null ? request.keyword : ''}" required>
                     </div>
-                    
-                    <!-- 도서 상세 정보 -->
-                    <div class="card-body d-flex flex-column">
-                        <h4 class="card-title text-truncate mb-1">
-                            <a th:href="@{/books/{id}(id=${book.id})}" class="text-dark fw-bold text-decoration-none" th:text="${book.title}" th:title="${book.title}">도서 제목</a>
-                        </h4>
-                        
-                        <div class="book-author-info text-truncate mb-3" th:text="${book.authorName + ' | ' + book.publisherName}" th:title="${book.authorName + ' | ' + book.publisherName}">저자명 | 출판사</div>
-                        
-                        <!-- 설명 요약 (3줄) -->
-                        <p class="card-text text-muted small book-summary flex-grow-1 mb-3" th:text="${book.bookContent}">도서 내용 요약이 이곳에 배치됩니다.</p>
-                        
-                        <!-- 가격 & ISBN 정보 -->
-                        <div class="book-card-footer mt-auto d-flex justify-content-between align-items-center">
-                            <span class="price-text" th:text="${#numbers.formatInteger(book.price, 0, 'COMMA') + '원'}">0원</span>
-                            <span class="isbn-badge" th:text="${'ISBN: ' + book.isbn}">ISBN</span>
+
+                    <!-- ISBN -->
+                    <div class="search-col-isbn">
+                        <label class="form-label">ISBN (선택)</label>
+                        <input type="text" name="isbn" class="form-control"
+                               placeholder="ISBN"
+                               th:value="${request != null ? request.isbn : ''}">
+                    </div>
+
+                    <!-- 검색 버튼 -->
+                    <div class="search-col-btn">
+                        <button type="submit" class="btn btn-primary fw-bold w-100">검색</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ══ 로딩 오버레이 ════════════════════════════════════ -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="loading-spinner-card">
+                <div class="spinner-glow mb-3">
+                    <div class="spinner-border" role="status" style="width:3rem;height:3rem;border-width:.22em;">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-1">도서 분석 중</h4>
+                <p class="mb-0">AI가 가장 적합한 도서를 탐색하고 있습니다.</p>
+            </div>
+        </div>
+
+        <!-- ══ 검색 결과 ════════════════════════════════════════ -->
+        <div th:if="${books != null}">
+
+            <!-- 결과 메타 -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="d-flex align-items-center gap-2">
+                    <h3 class="fw-bold m-0" style="font-size:17px;letter-spacing:-.02em;">검색 결과</h3>
+                    <span class="badge bg-blue-lt" th:text="${page.totalElements + '권'}">0권</span>
+                </div>
+                <div th:if="${searchTime != null}" class="text-muted" style="font-size:12px;">
+                    검색 속도 <span class="badge bg-secondary-lt ms-1" th:text="${searchTime + '초'}">0.000초</span>
+                </div>
+            </div>
+
+            <!-- 결과 없음 -->
+            <div th:if="${books.isEmpty()}" class="no-results-banner text-center">
+                <div class="banner-icon mb-3">🔍</div>
+                <h4 class="fw-bold" style="font-size:16px;">검색된 도서가 없습니다</h4>
+                <p class="text-muted small mb-0">키워드를 바꾸거나 검색 방식을 변경해 보세요.</p>
+            </div>
+
+            <!-- 도서 그리드 -->
+            <div th:unless="${books.isEmpty()}" class="row g-4 mb-5">
+                <div th:each="book : ${books}" class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="card h-100 book-card border-0">
+
+                        <!-- 점수 뱃지 -->
+                        <div class="card-badges">
+                        <span th:if="${book.relevance != null}" class="badge bg-green"
+                              th:text="${'AI ' + book.relevance + '점'}"></span>
+                            <span th:if="${book.similarity != null}" class="badge bg-blue"
+                                  th:text="${'유사도 ' + #numbers.formatPercent(book.similarity, 1, 0)}"></span>
+                            <span th:if="${book.rrfScore != null}" class="badge bg-purple"
+                                  th:text="${'RRF ' + #numbers.formatDecimal(book.rrfScore, 1, 3)}"></span>
                         </div>
-                    </div>
-                    
-                    <!-- AI 추천 한마디 (RAG 등 추천 코멘트 노출) -->
-                    <div th:if="${book.aiComment != null && !book.aiComment.isEmpty()}" class="ai-comment-container">
-                        <span class="badge ai-badge">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-robot me-1" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M7 7h10a2 2 0 0 1 2 2v1l1 1v3l-1 1v3a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-3l-1 -1v-3l1 -1v-1a2 2 0 0 1 2 -2z"></path>
-                                <path d="M10 16h4"></path>
-                                <circle cx="8.5" cy="11.5" r=".5" fill="currentColor"></circle>
-                                <circle cx="15.5" cy="11.5" r=".5" fill="currentColor"></circle>
-                                <path d="M9 7l-1 -4"></path>
-                                <path d="M15 7l1 -4"></path>
-                            </svg> AI 추천 의견
+
+                        <!-- 커버 이미지 -->
+                        <div class="book-image-container">
+                            <a th:href="@{/books/{id}(id=${book.id})}"
+                               class="d-block text-center w-100 h-100 d-flex align-items-center justify-content-center">
+                                <img th:src="${book.imageUrl != null && !book.imageUrl.isEmpty() ? book.imageUrl : 'https://placehold.co/150x210?text=No+Cover'}"
+                                     class="book-img" th:alt="${book.title}"
+                                     onerror="this.onerror=null;this.src='https://placehold.co/150x210?text=No+Cover'">
+                            </a>
+                        </div>
+
+                        <!-- 카드 본문 -->
+                        <div class="card-body d-flex flex-column">
+                            <h4 class="card-title text-truncate mb-1">
+                                <a th:href="@{/books/{id}(id=${book.id})}" class="text-dark text-decoration-none"
+                                   th:text="${book.title}" th:title="${book.title}">도서 제목</a>
+                            </h4>
+                            <div class="book-author-info text-truncate"
+                                 th:text="${book.authorName + ' · ' + book.publisherName}"
+                                 th:title="${book.authorName + ' · ' + book.publisherName}">저자 · 출판사
+                            </div>
+                            <p class="card-text book-summary flex-grow-1" th:text="${book.bookContent}">내용 요약</p>
+                            <div class="book-card-footer">
+                            <span class="price-text"
+                                  th:text="${#numbers.formatInteger(book.price, 0, 'COMMA') + '원'}">0원</span>
+                                <span class="isbn-badge" th:text="${book.isbn}">ISBN</span>
+                            </div>
+                        </div>
+
+                        <!-- AI 추천 코멘트 -->
+                        <div th:if="${book.aiComment != null && !book.aiComment.isEmpty()}"
+                             class="ai-comment-container">
+                        <span class="ai-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24"
+                                 stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round"
+                                 stroke-linejoin="round" style="vertical-align:middle;margin-right:3px">
+                                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                                <path d="M7 7h10a2 2 0 0 1 2 2v1l1 1v3l-1 1v3a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-3l-1 -1v-3l1 -1v-1a2 2 0 0 1 2 -2z"/>
+                                <path d="M10 16h4"/>
+                                <circle cx="8.5" cy="11.5" r=".5" fill="currentColor"/>
+                                <circle cx="15.5" cy="11.5" r=".5" fill="currentColor"/>
+                                <path d="M9 7l-1 -4"/><path d="M15 7l1 -4"/>
+                            </svg>AI 추천
                         </span>
-                        <p class="ai-comment-text mb-0" th:text="${book.aiComment}" th:title="${book.aiComment}">AI 추천 의견이 여기에 들어갑니다.</p>
+                            <p class="ai-comment-text mb-0" th:text="${book.aiComment}"
+                               th:title="${book.aiComment}"></p>
+                        </div>
+
                     </div>
                 </div>
             </div>
+
+            <!-- 페이지네이션 -->
+            <div th:if="${page != null && page.totalPages > 1}" class="d-flex justify-content-center mt-5">
+                <ul class="pagination">
+                    <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+                        <a class="page-link" href="#"
+                           th:onclick="'changePage(' + ${page.number - 1} + '); return false;'">&laquo;</a>
+                    </li>
+                    <li class="page-item" th:each="pageNum : ${pageNumbers}"
+                        th:classappend="${pageNum == page.number} ? 'active'">
+                        <a class="page-link" href="#"
+                           th:onclick="'changePage(' + ${pageNum} + '); return false;'"
+                           th:text="${pageNum + 1}">1</a>
+                    </li>
+                    <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+                        <a class="page-link" href="#"
+                           th:onclick="'changePage(' + ${page.number + 1} + '); return false;'">&raquo;</a>
+                    </li>
+                </ul>
+            </div>
         </div>
-
-        <!-- 페이지네이션 -->
-        <div th:if="${page != null && page.totalPages > 1}" class="d-flex justify-content-center mt-5">
-            <ul class="pagination">
-                <!-- 이전 페이지 -->
-                <li class="page-item" th:classappend="${page.first} ? 'disabled'">
-                    <a class="page-link" href="#" th:onclick="'changePage(' + ${page.number - 1} + '); return false;'">
-                        <span>&laquo; 이전</span>
-                    </a>
-                </li>
-
-                <!-- 페이지 번호 -->
-                <li class="page-item" th:each="pageNum : ${pageNumbers}" 
-                    th:classappend="${pageNum == page.number} ? 'active'">
-                    <a class="page-link" href="#" th:onclick="'changePage(' + ${pageNum} + '); return false;'" 
-                       th:text="${pageNum + 1}">1</a>
-                </li>
-
-                <!-- 다음 페이지 -->
-                <li class="page-item" th:classappend="${page.last} ? 'disabled'">
-                    <a class="page-link" href="#" th:onclick="'changePage(' + ${page.number + 1} + '); return false;'">
-                        <span>다음 &raquo;</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
-        
     </div>
 
-    <!-- 페이지 제어 자바스크립트 -->
+    <!-- ══ 페이지 스크립트 ═══════════════════════════════════ -->
     <script th:inline="javascript">
-        // 페이지 이동 후 폼 전송
         function changePage(pageNum) {
             document.getElementById('pageNumber').value = pageNum;
             document.getElementById('loadingOverlay').classList.add('active');
             document.getElementById('searchForm').submit();
         }
 
-        // 새 검색 시 page를 0으로 리셋하고 로딩 오버레이 실행
-        document.getElementById('searchForm').addEventListener('submit', function(e) {
-            // HTML5 기본 유효성 검사 통과 시에만 로딩 표시
+        document.getElementById('searchForm').addEventListener('submit', function (e) {
             if (this.checkValidity()) {
                 document.getElementById('pageNumber').value = 0;
                 document.getElementById('loadingOverlay').classList.add('active');
