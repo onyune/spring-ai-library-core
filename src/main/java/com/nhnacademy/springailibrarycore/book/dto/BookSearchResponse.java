@@ -41,6 +41,9 @@ public class BookSearchResponse {
     /** AI 추천 사유. RAG 검색 결과에서만 사용. */
     private final String aiComment;
 
+    /** 개인화 추천 유사도 점수. 이 값이 null이 아니면 개인화 추천 UI를 노출합니다. */
+    private final Double personalizationScore;
+
     /**
      * 키워드 검색용 QueryDSL 프로젝션 생성자.
      * similarity, rrfScore, relevance, aiComment 는 null로 초기화.
@@ -58,7 +61,7 @@ public class BookSearchResponse {
     ) {
         this(id, isbn, title, authorName, publisherName,
                 price, imageUrl, bookContent,
-                null, null, null, null);
+                null, null, null, null, null);
     }
 
     /**
@@ -79,7 +82,7 @@ public class BookSearchResponse {
     ) {
         this(id, isbn, title, authorName, publisherName,
                 price, imageUrl, bookContent,
-                similarity, null, null, null);
+                similarity, null, null, null, null);
     }
 
     /**
@@ -97,7 +100,8 @@ public class BookSearchResponse {
             Double similarity,
             Double rrfScore,
             Integer relevance,
-            String aiComment
+            String aiComment,
+            Double personalizationScore
     ) {
         this.id = id;
         this.isbn = isbn;
@@ -111,6 +115,7 @@ public class BookSearchResponse {
         this.rrfScore = rrfScore;
         this.relevance = relevance;
         this.aiComment = aiComment;
+        this.personalizationScore = personalizationScore;
     }
 
     /**
@@ -158,6 +163,16 @@ public class BookSearchResponse {
         return this.toBuilder()
                 .relevance(relevance)
                 .aiComment(aiComment)
+                .build();
+    }
+
+    /**
+     * 개인화 추천 점수를 교체한 새 인스턴스를 반환합니다.
+     * toBuilder()를 통해 나머지 필드는 그대로 복사됩니다.
+     */
+    public BookSearchResponse withPersonalizationScore(Double personalizationScore) {
+        return this.toBuilder()
+                .personalizationScore(personalizationScore)
                 .build();
     }
 }
