@@ -1,31 +1,22 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-</head>
 <body>
-
-<!-- 헤더 프래그먼트 정의 -->
 <th:block th:fragment="header">
-    <nav class="navbar navbar-expand-lg navbar-light bg-glass border-bottom py-2 fixed-top header-navbar">
+    <nav class="navbar navbar-expand-lg navbar-dark header-navbar fixed-top">
         <div class="container">
-            <!-- 로고 -->
-            <a class="navbar-brand d-flex align-items-center fw-bold" href="/">
-                <span class="logo-icon me-2">✨</span>
-                <span class="logo-text">AI Library</span>
+            <a class="navbar-brand d-flex align-items-center gap-2 fw-bold text-white text-decoration-none" href="/">
+                <span class="logo-icon">✨</span>
+                <span class="logo-text">Ai-Library-team4</span>
             </a>
-
-            <!-- 메뉴 -->
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <ul class="navbar-nav align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link active fw-medium px-3 text-secondary" href="/">도서 검색</a>
+                        <a class="nav-link active" href="/">도서 검색</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 </th:block>
-
 </body>
 </html>

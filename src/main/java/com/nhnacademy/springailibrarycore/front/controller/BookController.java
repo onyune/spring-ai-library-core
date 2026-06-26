@@ -14,6 +14,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 @Controller
 @RequestMapping("/books")
 @RequiredArgsConstructor
@@ -38,10 +42,25 @@ public class BookController {
     ) {
         log.info("[BookController] 도서 상세 조회 요청: {}, page: {}", id, pageable.getPageNumber());
         BookDetailResponse bookDetail = bookService.getBookDetail(id, pageable);
-
         model.addAttribute("bookDetail", bookDetail);
+        return "book-detail";
+    }
 
-        return "/book-detail";
+    /**
+     * 리뷰 작성 기능 (임시 더미 엔드포인트)
+     */
+    @PostMapping("/{id}/reviews")
+    public String writeReviewDummy(
+            @PathVariable("id") Long id,
+            @RequestParam("rating") int rating,
+            @RequestParam("content") String content,
+            RedirectAttributes redirectAttributes
+    ) {
+        log.info("[BookController] 리뷰 등록 요청 (DUMMY): bookId={}, rating={}, content={}", id, rating, content);
+        // 실제 저장은 지원하지 않으므로 플래시 속성에 오류/안내 메시지를 담아 리다이렉트
+        redirectAttributes.addFlashAttribute("message", "현재 리뷰 등록 기능은 준비 중입니다. 조만간 만나보실 수 있습니다!");
+        return "redirect:/books/" + id;
     }
 }
+
 

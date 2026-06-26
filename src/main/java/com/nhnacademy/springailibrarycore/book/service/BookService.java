@@ -2,6 +2,7 @@ package com.nhnacademy.springailibrarycore.book.service;
 
 import com.nhnacademy.springailibrarycore.book.domain.Book;
 import com.nhnacademy.springailibrarycore.book.dto.BookDetailResponse;
+import com.nhnacademy.springailibrarycore.book.exception.NotFoundBookException;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.review.dto.ReviewResponse;
 import com.nhnacademy.springailibrarycore.review.service.ReviewService;
@@ -32,7 +33,7 @@ public class BookService {
         log.info("[BookService] 도서 상세 및 리뷰 페이징 조회 요청 -> id: {}, page: {}", bookId, pageable.getPageNumber());
 
         Book book = bookRepository.findById(bookId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 도서 ID입니다. (ID: " + bookId + ")"));
+                .orElseThrow(() -> new NotFoundBookException(bookId));
 
         // 리뷰 목록 페이징 조회
         Page<ReviewResponse> reviews = reviewService.getReviewsByBookId(bookId, pageable);
