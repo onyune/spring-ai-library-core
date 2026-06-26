@@ -1,72 +1,71 @@
 package com.nhnacademy.springailibrarycore.agent;
 
-import com.nhnacademy.springailibrarycore.library.mcp.BookSearchTool;
-import com.nhnacademy.springailibrarycore.library.mcp.LibrarySearchTool;
+import com.nhnacademy.springailibrarycore.telegram.dto.AskRequest;
+import com.nhnacademy.springailibrarycore.telegram.dto.AskResponse;
+import com.nhnacademy.springailibrarycore.telegram.dto.IntentResult;
+import com.nhnacademy.springailibrarycore.telegram.exception.NotFoundIntentException;
+import com.nhnacademy.springailibrarycore.telegram.handler.IntentHandler;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * 텔레그램 모듈의 단일 진입점으로부터 요청을 받아 의도를 분류하고(Supervisor),
+ * 각 하위 서비스/에이전트로 작업을 위임하는 라우터 에이전트.
+ */
 @Service
 @Slf4j
 public class AiLibraryAssistantAgent {
 
     private final ChatClient chatClient;
+    private final List<IntentHandler> handlers;
+    // private final LibraryInfoService libraryInfoService;
+    // private final PersonalizedSearchService personalizedSearchService;
 
     public AiLibraryAssistantAgent(
             @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
-            LibrarySearchTool librarySearchTool,
-            BookSearchTool bookSearchTool
+            List<IntentHandler> handlers
+            // LibraryInfoService libraryInfoService,
+            // PersonalizedSearchService personalizedSearchService
     ) {
         this.chatClient = chatClientBuilder.defaultSystem( """
-                당신은 도서 및 도서관 정보를 제공하는 지능형 '도서관 도우미 AI 에이전트'입니다.
-                사용자의 질문(자연어)을 분석하고, 매칭되는 도구(Tool)를 실행하여 최적의 답변을 생성하세요.
-    
-                ---
-                [1. 사용 가능한 도구 목록 및 호출 가이드]
-    
-                1. 도서 검색 (searchBooks)
-                   - 사용 목적: 사용자가 책 제목, 주제, 키워드 등을 활용하여 도서(책) 정보를 검색하고 추천받고 싶어 할 때 사용합니다.
-                   - 파라미터:
-                     * `query`: 도서 검색 키워드 (예: "자바", "스프링", "Java")
-    
-                2. 도서관 목록 및 상세 정보 검색 (searchLibraries)
-                   - 사용 목적: 특정 도서관의 상세 정보(운영시간, 주소, 연락처, 휴관일 등)를 조회하거나 특정 지역에 위치한 도서관 목록을 검색하고 싶을 때 사용합니다.
-                   - 파라미터:
-                     * `libraryName`: 검색하거나 상세 정보를 확인할 도서관 이름 (예: "강남도서관", "마포평생학습관") (선택사항)
-                     * `regionName`: 시도 지역명 (예: "서울", "경기도", "부산광역시") (선택사항)
-                     * `dtlRegionName`: 시군구 상세지역명 (예: "강남구", "마포구", "분당구") (선택사항)
-                     * `libCode`: 조회 대상 6자리 도서관 코드 (선택사항)
-                   - 주의사항: 한글 지역명(예: "서울", "강남구")을 그대로 파라미터(`regionName`, `dtlRegionName`)에 자연어로 넘겨주면, 백엔드 코디네이터가 코드로 자동 변환하므로 특수 코드를 LLM이 직접 찾아서 넘길 필요가 없습니다.
-    
-                ---
-                [2. 답변 작성 및 포맷팅 지침 (텔레그램 메신저 최적화)]
-                - **언어**: 반드시 한국어(Korean)로만 답변하세요.
-                - **Conciseness**: 모바일 화면(텔레그램)에서 쉽게 읽을 수 있도록 구구절절 쓰지 말고 명료하게 작성하세요.
-                - **마크다운 활용**:
-                  - 대제목 기호(`#`, `##`)는 텔레그램에서 크게 깨질 수 있으므로 절대 사용하지 마세요.
-                  - 대신 볼드체(`*텍스트*`)와 적절한 줄바꿈(\n)을 활용해 문단을 구분하세요.
-                  - 리스트 항목을 표현할 때는 번호(`1.`, `2.`)나 이모지(`- 📖`, `- 📍`)를 사용하세요.
-                - **데이터 제한**: 도서관 목록이나 도서 목록이 너무 많이 반환된 경우 최대 10~15개까지만 정리해서 보여주고, "더 많은 정보가 필요하시면 추가로 말씀해 주세요."라고 안내하세요.
+                당신은 도서관 이용자의 질문 의도를 정확하게 파악하는 AI 라우터입니다.
+                사용자의 입력 문장을 분석하여 다음 3가지 중 하나의 의도(Intent)로 분류하고, 검색에 사용할 핵심 키워드를 추출하세요.
+                
+                1. LIBRARY_INFO: 도서관 운영 시간, 위치, 휴관일, 이용 규칙 등 도서관 자체에 대한 질문
+                2. BOOK_RECOMMENDATION: 특정 책 검색, 도서 추천, 특정 주제의 책을 찾아달라는 요청
+                3. LIBRARY_BOOK_RECOMMENDATION: LIBRARY_INFO와 BOOK_RECOMMENDATION 모두 해당하는 요청
+                3. GENERAL_CHAT: 인삿말 등 위 세 가지에 해당하지 않는 일상 대화
                 """)
-                .defaultTools(librarySearchTool, bookSearchTool)
                 .build();
+        this.handlers = handlers;
     }
 
-    @Transactional
-    public String ask(String userMessage) {
-        try {
-            String response = chatClient.prompt()
-                    .user(userMessage)
-                    .call()
-                    .content();
 
-            log.info("[LibraryAgent] 응답 생성 완료");
-            return response;
+
+    @Transactional
+    public List<AskResponse> ask(AskRequest request) {
+        try {
+            // 1. LLM을 이용한 의도 분류 (Structured Output)
+            IntentResult intentResult = chatClient.prompt()
+                    .user(request.question())
+                    .call()
+                    .entity(IntentResult.class);
+
+            log.info("[Supervisor] 분류된 의도: {}, 추출된 키워드: {}", intentResult.intent(), intentResult.keyword());
+
+            IntentHandler targetHandler = handlers.stream()
+                    .filter(handler -> handler.supports(intentResult.intent()))
+                    .findFirst()
+                    .orElseThrow(()-> new NotFoundIntentException());
+            return targetHandler.handle(request);
+
         } catch (Exception e) {
-            log.error("[LibraryAgent] 요청 처리 실패", e);
-            return "죄송합니다. 도서 및 도서관 정보를 처리하는 중 에러가 발생했습니다. 다시 시도해 주세요.";
+            log.error("[Supervisor] 의도 분류 및 라우팅 중 에러 발생", e);
+            return List.of(new AskResponse(null, "죄송합니다. 요청을 처리하는 중 문제가 발생했습니다."));
         }
     }
 }
