@@ -1,8 +1,10 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.search;
 
+import com.nhnacademy.springailibrarycore.book.dto.BookFeedbackStatistics;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
+import com.nhnacademy.springailibrarycore.book.service.FeedbackInternalService;
 import com.nhnacademy.springailibrarycore.book.strategy.impl.HybridSearchStrategy;
 import com.nhnacademy.springailibrarycore.book.service.preference.UserPreferenceService;
 import java.util.Comparator;
@@ -31,6 +33,7 @@ public class RrfBookReranker {
 
     private final HybridSearchStrategy hybridSearchStrategy;
     private final UserPreferenceService userPreferenceService;
+    private final FeedbackInternalService feedbackInternalService;
 
     public List<BookSearchResponse> reranker(BookSearchRequest request){
         // ------- HYBRID 전략 으로 도서 리스트 검색 -------
@@ -41,6 +44,9 @@ public class RrfBookReranker {
                 );
 
         List<BookSearchResponse> candidates = retrievalResult.getContent();
+        if (candidates == null || candidates.isEmpty()) {
+            return List.of();
+        }
 
         // ------- 선호도 벡터 기반 점수 추가 (가중치 0.3) -------
         if (request.chatId() != null) {
@@ -55,11 +61,26 @@ public class RrfBookReranker {
                 }
                 return book;
             }).toList();
+        } else {
+            // ------- 글로벌 피드백 통계 기반 점수 가산 (가중치 0.5) -------
+            List<Long> bookIds = candidates.stream().map(BookSearchResponse::getId).toList();
+            Map<Long, BookFeedbackStatistics> statsMap = feedbackInternalService.getBooksFeedbackStats(bookIds);
+
+            candidates = candidates.stream().map(book -> {
+                BookFeedbackStatistics stats = statsMap.get(book.getId());
+
+                if (stats != null && stats.totalCount() >= 5) {
+                    double feedbackBonus = stats.score() * 0.5;
+                    double finalScore = (book.getRrfScore() != null ? book.getRrfScore() : 0.0) + feedbackBonus;
+                    return book.withRrfScore(finalScore);
+                }
+                return book;
+            }).toList();
         }
 
+
         // -------- rrf score가 높은 순으로 내림차순 정렬 ----------
-        List<BookSearchResponse> rankedBooks = candidates
-                .stream()
+        List<BookSearchResponse> rankedBooks = candidates.stream()
                 .filter(book -> book.getRrfScore() != null)
                 .sorted(Comparator.comparing(
                         BookSearchResponse::getRrfScore
