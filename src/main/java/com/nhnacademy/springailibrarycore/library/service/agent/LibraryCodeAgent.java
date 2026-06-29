@@ -45,11 +45,17 @@ public class LibraryCodeAgent {
 
         String normalizedQuery = libraryName.replaceAll("\\s+", "");
 
-        // 1단계: 캐시에서 공백을 제외한 정확한 일치 판별
+        // 입력값이 이미 캐시에 유효하게 등록된 도서관 코드(Value) 자체인지 판별
+        if (libraryCodeMap.containsValue(normalizedQuery)) {
+            log.info("[LibraryCodeAgent] 캐시에 등록된 유효한 도서관 코드로 확인되어 즉시 반환합니다: {}", normalizedQuery);
+            return normalizedQuery;
+        }
+
+        // 캐시에서 공백을 제외한 정확한 일치 판별
         String code = lookup(normalizedQuery, true);
         if (code != null) return code;
 
-        // 2단계: 캐시에서 포함 관계(Fuzzy/Substring) 일치 판별
+        // 캐시에서 포함 관계(Fuzzy/Substring) 일치 판별
         code = lookup(normalizedQuery, false);
         if (code != null) return code;
 
