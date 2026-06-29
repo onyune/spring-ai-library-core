@@ -42,7 +42,7 @@ public class BookRecommendationAgent {
                 
                 [규칙]
                 - bookId는 반드시 입력으로 받은 값을 그대로 사용해.
-                - recommendations 배열에 입력된 모든 도서에 대해 빠짐없이 응답해.
+                - 응답은 반드시 단일 JSON 객체({})여야 하며, 'recommendations' 키 안에 도서 추천 배열을 포함시켜야 해. 절대 배열([])로 바로 응답하지 마.
                 - aiComment는 반드시 한국어로 작성해.
                 - relevance가 낮아도 이유는 성실히 작성해.
                 """;

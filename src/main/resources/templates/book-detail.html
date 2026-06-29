@@ -207,31 +207,41 @@
             </div>
 
             <!-- 리뷰 목록 -->
-            <div class="reviews-list">
+            <div class="reviews-list mt-4">
 
                 <!-- 리뷰 없음 -->
-                <div th:if="${bookDetail.reviews.isEmpty()}" class="no-reviews-state">
-                    <div class="no-reviews-icon">💬</div>
-                    <div class="no-reviews-title">아직 등록된 리뷰가 없습니다</div>
-                    <div class="no-reviews-sub">이 도서의 첫 번째 리뷰를 남겨보세요!</div>
+                <div th:if="${bookDetail.reviews.isEmpty()}" class="text-center py-5 no-reviews-state" style="background-color: #f8f9fa; border-radius: 12px;">
+                    <div class="display-4 text-muted mb-3">💬</div>
+                    <h5 class="no-reviews-title fw-bold text-secondary">아직 등록된 리뷰가 없습니다</h5>
+                    <p class="no-reviews-sub text-muted">이 도서의 첫 번째 리뷰를 남겨보세요!</p>
                 </div>
 
                 <!-- 리뷰 아이템 -->
-                <div th:unless="${bookDetail.reviews.isEmpty()}"
-                     th:each="review : ${bookDetail.reviews.content}"
-                     class="review-item">
-                    <div class="review-item-top">
-                        <div class="reviewer-left">
-                            <span class="reviewer-name" th:text="${review.reviewerId}">user***</span>
-                            <span class="star-display">
-                                <span th:each="i : ${#numbers.sequence(1, 5)}"
-                                      th:text="${i <= review.rating} ? '★' : '☆'"></span>
-                            </span>
+                <div th:unless="${bookDetail.reviews.isEmpty()}" class="review-items-container">
+                    <div th:each="review : ${bookDetail.reviews.content}"
+                         class="review-item p-4 mb-3" style="background-color: #ffffff; border: 1px solid #e9ecef; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div class="d-flex justify-content-between align-items-center mb-2 review-item-top">
+                            <div class="d-flex align-items-center gap-3 reviewer-left">
+                                <div class="reviewer-avatar rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border: 1px solid #dee2e6;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-person text-secondary" viewBox="0 0 16 16">
+                                      <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <div class="reviewer-name fw-bold" th:text="${review.reviewerId}" style="font-size: 15px; color: #343a40;">user***</div>
+                                    <div class="star-display text-warning mt-1" style="font-size: 14px; letter-spacing: 1px;">
+                                        <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                              th:text="${i <= review.rating} ? '★' : '☆'"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="review-date text-muted" style="font-size: 13px;"
+                                  th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</div>
                         </div>
-                        <span class="review-date"
-                              th:text="${#temporals.format(review.createdAt, 'yyyy.MM.dd HH:mm')}">날짜</span>
+                        <div class="review-body mt-3 pt-2 border-top" style="font-size: 15px; line-height: 1.6; color: #495057;">
+                            <p class="mb-0" th:text="${review.content}" style="white-space: pre-wrap;">리뷰 내용</p>
+                        </div>
                     </div>
-                    <p class="review-body" th:text="${review.content}">리뷰 내용</p>
                 </div>
 
             </div>

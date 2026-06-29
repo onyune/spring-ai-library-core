@@ -18,8 +18,9 @@ import org.springframework.stereotype.Component;
          */
         public String reduceSummaries(String combinedSummaries) {
             String reducePrompt = """
-                당신은 도서 평평 분석 전문가입니다. 분할되어 요약된 아래의 부분 리뷰 보고서들을 분석하여,
-                이 도서에 대한 전반적인 장점(Good Points)과 단점(Bad Points)을 정돈하고, 최종 종합 의견을 마크다운 문법으로 깔끔하게 작성해 주세요.
+                당신은 도서 리뷰 분석 전문가입니다. 분할되어 요약된 아래의 부분 리뷰 보고서들을 분석하여,
+                장점과 단점을 포함한 도서의 최종 종합 의견을 반드시 2~3줄로만 요약해 주세요.
+                (장점:, 단점: 등 항목을 나누지 말고, 오직 2~3줄 길이의 텍스트 하나만 출력할 것)
                 """;
     
             return client.prompt()
