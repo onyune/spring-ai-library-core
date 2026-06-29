@@ -8,5 +8,6 @@ public class TelegramFeedbackClient {
 
     public FeedbackLikedBooksResponse getLikedBooks(Long chatId){
         //TODO: telegram 통신 소통
+        return new FeedbackLikedBooksResponse(null, null);
     }
 }

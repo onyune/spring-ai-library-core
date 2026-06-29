@@ -20,7 +20,10 @@ public class RegionCodeAgent {
             return null;
         }
 
-        Region region = Region.fromName(regionName);
+        Region region = Region.fromCode(regionName);
+        if (region == null) {
+            region = Region.fromName(regionName);
+        }
         if (region == null) {
             // 더 넓은 범위의 포함 관계(Fuzzy/Substring) 일치 시도
             String cleanName = regionName.replaceAll("\\s+", "");
