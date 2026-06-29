@@ -1,6 +1,6 @@
 package com.nhnacademy.springailibrarycore.telegram.controller;
 
-import com.nhnacademy.springailibrarycore.agent.AiLibraryAssistantAgent;
+import com.nhnacademy.springailibrarycore.telegram.agent.AiLibraryAssistantAgent;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskRequest;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskResponse;
 import java.util.List;

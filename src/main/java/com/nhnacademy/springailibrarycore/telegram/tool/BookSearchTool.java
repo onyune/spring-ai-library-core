@@ -1,4 +1,4 @@
-package com.nhnacademy.springailibrarycore.library.mcp;
+package com.nhnacademy.springailibrarycore.telegram.tool;
 
 import com.nhnacademy.springailibrarycore.agent.BookSearchAgent;
 import com.nhnacademy.springailibrarycore.book.domain.SearchType;
@@ -19,9 +19,9 @@ import org.springframework.stereotype.Component;
 public class BookSearchTool {
     private final BookSearchAgent bookSearchAgent;
 
-    @Tool(description = "도서관 시스템에서 도서를 검색합니다.")
+    @Tool(description = "도서관 시스템에서 도서를 추천받거나 검색합니다. AI 연관성 점수(relevance)이 제일 높은 책 3개만 반환합니다.")
     public List<BookSearchResponse> searchBooks(
-            @ToolParam(description = "도서 검색 키워드") String query,
+            @ToolParam(description = "사용자의 도서 추천 및 검색 의도인 부분만 그대로 발췌합니다.") String query,
             @ToolParam(description = "사용자의 채팅방 ID (chatId)") Long chatId
     ) {
         // SearchType.RAG로 요청 생성
