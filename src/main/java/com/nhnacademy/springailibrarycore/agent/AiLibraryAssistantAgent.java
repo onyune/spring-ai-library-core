@@ -1,5 +1,8 @@
 package com.nhnacademy.springailibrarycore.agent;
 
+import com.nhnacademy.springailibrarycore.library.mcp.BookSearchTool;
+import com.nhnacademy.springailibrarycore.library.mcp.LibrarySearchTool;
+import com.nhnacademy.springailibrarycore.library.mcp.PopularBookSearchTool;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskRequest;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskResponse;
 import java.util.List;
@@ -21,7 +24,10 @@ public class AiLibraryAssistantAgent {
     private final ChatClient chatClient;
 
     public AiLibraryAssistantAgent(
-            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder
+            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
+            PopularBookSearchTool popularBookSearchTool,
+            LibrarySearchTool librarySearchTool,
+            BookSearchTool bookSearchTool
     ) {
         this.chatClient = chatClientBuilder.defaultSystem( """
                 당신은 NHN 도서관의 친절하고 전문적인 AI 사서입니다.
@@ -34,7 +40,7 @@ public class AiLibraryAssistantAgent {
                 추천할 도서가 여러 권이라면 배열에 여러 항목을 만들어주세요.
                 단순 도서관 안내처럼 특정 도서와 관련 없는 답변이라면 bookId는 null로 설정하세요.
                 """)
-                // .defaultFunctions("searchBookTool", "getLibraryInfoTool") // TODO: 여기에 사용할 Tool 이름들을 등록하세요.
+                .defaultTools(popularBookSearchTool, librarySearchTool, bookSearchTool)
                 .build();
     }
 

@@ -49,21 +49,21 @@ public class BookController {
         return "book-detail";
     }
 
-    /**
-     * 리뷰 작성 기능 (임시 더미 엔드포인트)
-     */
-    @PostMapping("/{id}/reviews")
-    public String writeReviewDummy(
-            @PathVariable("id") Long id,
-            @RequestParam("rating") int rating,
-            @RequestParam("content") String content,
-            RedirectAttributes redirectAttributes
-    ) {
-        log.info("[BookController] 리뷰 등록 요청 (DUMMY): bookId={}, rating={}, content={}", id, rating, content);
-        // 실제 저장은 지원하지 않으므로 플래시 속성에 오류/안내 메시지를 담아 리다이렉트
-        redirectAttributes.addFlashAttribute("message", "현재 리뷰 등록 기능은 준비 중입니다. 조만간 만나보실 수 있습니다!");
-        return "redirect:/books/" + id;
-    }
+//    /**
+//     * 리뷰 작성 기능 (임시 더미 엔드포인트)
+//     */
+//    @PostMapping("/{id}/reviews")
+//    public String writeReviewDummy(
+//            @PathVariable("id") Long id,
+//            @RequestParam("rating") int rating,
+//            @RequestParam("content") String content,
+//            RedirectAttributes redirectAttributes
+//    ) {
+//        log.info("[BookController] 리뷰 등록 요청 (DUMMY): bookId={}, rating={}, content={}", id, rating, content);
+//        // 실제 저장은 지원하지 않으므로 플래시 속성에 오류/안내 메시지를 담아 리다이렉트
+//        redirectAttributes.addFlashAttribute("message", "현재 리뷰 등록 기능은 준비 중입니다. 조만간 만나보실 수 있습니다!");
+//        return "redirect:/books/" + id;
+//    }
 
     /**
      * 특정 도서에 리뷰를 등록합니다.
