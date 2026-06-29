@@ -4,8 +4,10 @@ import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.strategy.impl.HybridSearchStrategy;
+import com.nhnacademy.springailibrarycore.book.service.preference.UserPreferenceService;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +30,7 @@ public class RrfBookReranker {
     private double rrfScoreThreshold = 0.013;
 
     private final HybridSearchStrategy hybridSearchStrategy;
+    private final UserPreferenceService userPreferenceService;
 
     public List<BookSearchResponse> reranker(BookSearchRequest request){
         // ------- HYBRID 전략 으로 도서 리스트 검색 -------
@@ -36,8 +39,26 @@ public class RrfBookReranker {
                         PageRequest.of(0, retrieval_k),
                         request
                 );
+
+        List<BookSearchResponse> candidates = retrievalResult.getContent();
+
+        // ------- 선호도 벡터 기반 점수 추가 (가중치 0.3) -------
+        if (request.chatId() != null) {
+            List<Long> candidateIds = candidates.stream().map(BookSearchResponse::getId).toList();
+            Map<Long, Double> personalizationScores = userPreferenceService.getPersonalizationScores(candidateIds, request.chatId());
+
+            candidates = candidates.stream().map(book -> {
+                Double pScore = personalizationScores.getOrDefault(book.getId(), 0.0);
+                if (pScore > 0.0) {
+                    double finalScore = (book.getRrfScore() != null ? book.getRrfScore() : 0.0) + (pScore * 0.3);
+                    return book.withRrfScore(finalScore).withPersonalizationScore(pScore);
+                }
+                return book;
+            }).toList();
+        }
+
         // -------- rrf score가 높은 순으로 내림차순 정렬 ----------
-        List<BookSearchResponse> rankedBooks = retrievalResult.getContent()
+        List<BookSearchResponse> rankedBooks = candidates
                 .stream()
                 .filter(book -> book.getRrfScore() != null)
                 .sorted(Comparator.comparing(

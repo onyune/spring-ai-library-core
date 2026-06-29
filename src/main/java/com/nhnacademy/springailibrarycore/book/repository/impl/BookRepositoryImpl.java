@@ -6,6 +6,7 @@ import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepositoryCustom;
 import com.nhnacademy.springailibrarycore.book.repository.impl.search.KeywordBookSearchRepository;
 import com.nhnacademy.springailibrarycore.book.repository.impl.search.VectorBookSearchRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -31,5 +32,15 @@ public class BookRepositoryImpl implements BookRepositoryCustom {
             BookSearchRequest request
     ) {
         return vectorSearchRepository.search(pageable, request.vector());
+    }
+
+    @Override
+    public List<float[]> findEmbeddingByBookIds(List<Long> bookIds) {
+        return vectorSearchRepository.findEmbeddingsByBookIds(bookIds);
+    }
+
+    @Override
+    public java.util.Map<Long, float[]> findEmbeddingMapByBookIds(List<Long> bookIds) {
+        return vectorSearchRepository.findEmbeddingMapByBookIds(bookIds);
     }
 }

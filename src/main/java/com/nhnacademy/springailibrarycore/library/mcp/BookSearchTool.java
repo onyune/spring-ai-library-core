@@ -19,12 +19,13 @@ import org.springframework.stereotype.Component;
 public class BookSearchTool {
     private final BookSearchAgent bookSearchAgent;
 
-    @Tool(description = "도서관 시스템에서 도서를 검색합니다. (최대 3권)")
+    @Tool(description = "도서관 시스템에서 도서를 검색합니다.")
     public List<BookSearchResponse> searchBooks(
-            @ToolParam(description = "도서 검색 키워드") String query
+            @ToolParam(description = "도서 검색 키워드") String query,
+            @ToolParam(description = "사용자의 채팅방 ID (chatId)") Long chatId
     ) {
-        // SearchType.AUTO로 요청 생성
-        BookSearchRequest request = new BookSearchRequest(query, null, SearchType.AUTO, null, false);
+        // SearchType.RAG로 요청 생성
+        BookSearchRequest request = new BookSearchRequest(query, null, SearchType.RAG, null, false, chatId);
 
         // BookSearchAgent
         BookSearchResult result = bookSearchAgent.searchBooks(PageRequest.of(0, 3), request);

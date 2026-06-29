@@ -8,6 +8,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberTemplate;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -82,5 +83,35 @@ public class VectorBookSearchRepository {
                 .fetchOne();
 
         return new BookSearchPageResult(content, total == null ? 0 : total);
+    }
+
+    public List<float[]> findEmbeddingsByBookIds(List<Long> bookIds){
+        if(bookIds==null || bookIds.isEmpty()){
+            return Collections.emptyList();
+        }
+        return queryFactory
+                .select(book.embedding)
+                .from(book)
+                .where(book.id.in(bookIds),
+                        book.embedding.isNotNull())
+                .fetch();
+    }
+
+    public java.util.Map<Long, float[]> findEmbeddingMapByBookIds(List<Long> bookIds){
+        if(bookIds==null || bookIds.isEmpty()){
+            return Collections.emptyMap();
+        }
+        List<com.querydsl.core.Tuple> results = queryFactory
+                .select(book.id, book.embedding)
+                .from(book)
+                .where(book.id.in(bookIds),
+                        book.embedding.isNotNull())
+                .fetch();
+
+        java.util.Map<Long, float[]> map = new java.util.HashMap<>();
+        for (com.querydsl.core.Tuple tuple : results) {
+            map.put(tuple.get(book.id), tuple.get(book.embedding));
+        }
+        return map;
     }
 }

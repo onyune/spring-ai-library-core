@@ -41,9 +41,16 @@ public class AiLibraryAssistantAgent {
     @Transactional
     public List<AskResponse> ask(AskRequest request) {
         try {
-            // 1. LLM에게 질문을 던지고, 결과를 List<AskResponse> 형태로 받습니다.
+            // 1. LLM에게 전달할 프롬프트 구성 (chatId 정보 포함)
+            String promptText = String.format(
+                    "사용자의 질문: %s\n\n(시스템 제공 정보: 현재 질문한 사용자의 chatId는 %d 입니다. 도서 검색 도구를 호출할 때 이 chatId를 파라미터로 반드시 전달해주세요.)",
+                    request.question(),
+                    request.chatId()
+            );
+
+            // 2. LLM에게 질문을 던지고, 결과를 List<AskResponse> 형태로 받습니다.
             List<AskResponse> aiResponses = chatClient.prompt()
-                    .user(request.question())
+                    .user(promptText)
                     .call()
                     .entity(new ParameterizedTypeReference<List<AskResponse>>() {});
 
