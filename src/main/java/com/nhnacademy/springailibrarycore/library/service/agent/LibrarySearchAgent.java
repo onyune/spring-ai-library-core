@@ -170,7 +170,7 @@ public class LibrarySearchAgent {
             log.info("[LibrarySearchAgent] 인메모리 조회 결과 없음. 외부 OpenAPI 실시간 조회를 수행합니다.");
             LibrarySearchRequest request = LibrarySearchRequest.builder()
                     .region(regionCode)
-                    .dtl_region(dtlRegionCode)
+                    .dtlRegion(dtlRegionCode)
                     .build();
             list = libraryNaruService.getLibraries(request);
         }

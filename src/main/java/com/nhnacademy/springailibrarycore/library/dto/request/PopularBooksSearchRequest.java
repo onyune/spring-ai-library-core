@@ -17,15 +17,15 @@ import java.time.format.DateTimeFormatter;
  * @param startDt    검색 시작일자 (yyyy-MM-dd). 입력하지 않고 endDt도 없을 경우, 자동으로 현재 날짜 기준 한 달 전 날짜로 설정됩니다.
  * @param endDt      검색 종료일자 (yyyy-MM-dd). 입력하지 않고 startDt도 없을 경우, 자동으로 전날(어제) 날짜로 설정됩니다.
  * @param gender     성별 필터 코드. (예: "0"은 남성, "1"은 여성). 세미콜론(;)을 구분자로 사용하여 다중 선택이 가능합니다. (예: "0;1")
- * @param from_age   상세 연령 검색 조건의 시작 연령 (0 ~ 120 범위). age 파라미터와 병행하여 사용하지 않는 것이 권장됩니다.
- * @param to_age     상세 연령 검색 조건의 종료 연령 (0 ~ 120 범위). age 파라미터와 병행하여 사용하지 않는 것이 권장됩니다.
+ * @param fromAge   상세 연령 검색 조건의 시작 연령 (0 ~ 120 범위). age 파라미터와 병행하여 사용하지 않는 것이 권장됩니다.
+ * @param toAge     상세 연령 검색 조건의 종료 연령 (0 ~ 120 범위). age 파라미터와 병행하여 사용하지 않는 것이 권장됩니다.
  * @param age        대표 연령대 필터 코드. 세미콜론(;)을 구분자로 다중 지정할 수 있습니다. (예: "20;30;40" -> 20대, 30대, 40대 동시 필터링)
  * @param region     행정구역 시도 코드. 세미콜론(;)을 구분자로 다중 지정할 수 있습니다. (예: "11;31" -> 서울, 경기)
- * @param dtl_region 행정구역 시군구 코드. 세미콜론(;)을 구분자로 다중 지정할 수 있습니다.
- * @param book_dvsn  도서 구분 필터. (예: "0"은 단행본, "1"은 비도서/기타)
+ * @param dtlRegion 행정구역 시군구 코드. 세미콜론(;)을 구분자로 다중 지정할 수 있습니다.
+ * @param bookDvsn  도서 구분 필터. (예: "0"은 단행본, "1"은 비도서/기타)
  * @param addCode    ISBN 부가기호 코드 (1자리 또는 5자리). 세미콜론(;)을 구분자로 다중 지정할 수 있습니다. (예: "0;7;9")
  * @param kdc        KDC(한국십진분류법) 대분류 코드 (0~9). 세미콜론(;)을 구분자로 다중 지정할 수 있습니다. (예: "8;9" -> 문학, 역사)
- * @param dtl_kdc    KDC 세부 주제분류 코드 (소분류 수준). 세미콜론(;)을 구분자로 다중 지정할 수 있습니다.
+ * @param dtlKdc    KDC 세부 주제분류 코드 (소분류 수준). 세미콜론(;)을 구분자로 다중 지정할 수 있습니다.
  * @param pageNo     조회할 결과의 페이지 번호 (기본값: 1)
  * @param pageSize   한 페이지에 노출될 인기 도서의 개수 (기본값: 10)
  */
@@ -34,15 +34,15 @@ public record PopularBooksSearchRequest(
         String startDt,
         String endDt,
         String gender,
-        Integer from_age,
-        Integer to_age,
+        Integer fromAge,
+        Integer toAge,
         String age,
         String region,
-        String dtl_region,
-        String book_dvsn,
+        String dtlRegion,
+        String bookDvsn,
         String addCode,
         String kdc,
-        String dtl_kdc,
+        String dtlKdc,
         Integer pageNo,
         Integer pageSize
 ) {
@@ -73,15 +73,15 @@ public record PopularBooksSearchRequest(
         if (startDt != null && !startDt.isBlank()) params.add("startDt", startDt);
         if (endDt != null && !endDt.isBlank()) params.add("endDt", endDt);
         if (gender != null && !gender.isBlank()) params.add("gender", gender);
-        if (from_age != null) params.add("from_age", String.valueOf(from_age));
-        if (to_age != null) params.add("to_age", String.valueOf(to_age));
+        if (fromAge != null) params.add("from_age", String.valueOf(fromAge));
+        if (toAge != null) params.add("to_age", String.valueOf(toAge));
         if (age != null && !age.isBlank()) params.add("age", age);
         if (region != null && !region.isBlank()) params.add("region", region);
-        if (dtl_region != null && !dtl_region.isBlank()) params.add("dtl_region", dtl_region);
-        if (book_dvsn != null && !book_dvsn.isBlank()) params.add("book_dvsn", book_dvsn);
+        if (dtlRegion != null && !dtlRegion.isBlank()) params.add("dtl_region", dtlRegion);
+        if (bookDvsn != null && !bookDvsn.isBlank()) params.add("book_dvsn", bookDvsn);
         if (addCode != null && !addCode.isBlank()) params.add("addCode", addCode);
         if (kdc != null && !kdc.isBlank()) params.add("kdc", kdc);
-        if (dtl_kdc != null && !dtl_kdc.isBlank()) params.add("dtl_kdc", dtl_kdc);
+        if (dtlKdc != null && !dtlKdc.isBlank()) params.add("dtl_kdc", dtlKdc);
         if (pageNo != null) params.add("pageNo", String.valueOf(pageNo));
         if (pageSize != null) params.add("pageSize", String.valueOf(pageSize));
 
