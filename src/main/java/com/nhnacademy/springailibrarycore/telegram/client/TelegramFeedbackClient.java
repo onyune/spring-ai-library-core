@@ -1,8 +1,15 @@
 package com.nhnacademy.springailibrarycore.telegram.client;
 
+import com.nhnacademy.springailibrarycore.book.dto.BookFeedbackStatistics;
 import com.nhnacademy.springailibrarycore.book.dto.FeedbackLikedBooksResponse;
+import java.util.Collections;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -38,6 +45,37 @@ public class TelegramFeedbackClient {
             log.error("Failed to fetch liked books for chatId: {}", chatId, e);
             // 예외 발생 시 빈 리스트 반환
             return new FeedbackLikedBooksResponse(chatId, List.of());
+        }
+    }
+
+    public Map<Long, BookFeedbackStatistics> getBooksFeedbackStats(List<Long> bookIds) {
+        if(bookIds == null || bookIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            log.info("[FeedbackService] 도서 {}권에 대한 피드백 통계 조회 요청", bookIds.size());
+
+            List<BookFeedbackStatistics> statsList = restClient.post()
+                    .uri("/api/feedback/stats")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(bookIds)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<List<BookFeedbackStatistics>>() {});
+
+            if(statsList == null || statsList.isEmpty()) {
+                return Collections.emptyMap();
+            }
+
+            return statsList.stream()
+                    .collect(Collectors.toMap(
+                            BookFeedbackStatistics::bookId,
+                            Function.identity(),
+                            (existing, replacement) -> existing
+                    ));
+        } catch (Exception e) {
+            log.error("[FeedbackRestClient] 피드백 통계 HTTP 통신 실패 (Fallback 빈 Map 반환)", e);
+            return Collections.emptyMap();
         }
     }
 }
