@@ -31,6 +31,7 @@ import java.time.format.DateTimeFormatter;
 @Builder
 public record LibPopularBooksRequest(
         String libCode,
+        String libName,
         String region,
         String dtlRegion,
         String startDt,
