@@ -20,8 +20,7 @@ import java.util.List;
 public class NewArrivalBookTool {
     private final NewArrivalBookCoordinator newArrivalBookCoordinator;
 
-
-
+    //신착 도서 Tool
     @Tool(description = "특정 도서관의 신착 도서 목록을 조회합니다. 도서관명 또는 도서관 코드를 받아 신착 도서명, 저자, 출판사, 출판년도, ISBN을 제공합니다.")
     public String newArrivalBookRequest(
             @ToolParam(description = "조회 대상 6자리 도서관 코드 (도서관 코드를 명확히 아는 경우 직접 지정)", required = false) String libCode,
