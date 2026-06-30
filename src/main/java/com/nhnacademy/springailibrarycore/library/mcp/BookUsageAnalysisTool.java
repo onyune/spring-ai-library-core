@@ -35,6 +35,24 @@ public class BookUsageAnalysisTool {
             sb.append(String.format("- 출판년도: %s%n", book.publicationYear()));
             sb.append(String.format("- ISBN: %s%n", book.isbn13()));
 
+            if (book.additionSymbol() != null && !book.additionSymbol().isBlank()) {
+                sb.append(String.format("- ISBN 부가기호: %s%n", book.additionSymbol()));
+            }
+            if (book.vol() != null && !book.vol().isBlank()) {
+                sb.append(String.format("- 권: %s%n", book.vol()));
+            }
+            if (book.classNo() != null && !book.classNo().isBlank()) {
+                sb.append(String.format("- 주제 분류 번호: %s%n", book.classNo()));
+            }
+            if (book.classNm() != null && !book.classNm().isBlank()) {
+                sb.append(String.format("- 주제 분류: %s%n", book.classNm()));
+            }
+            if (book.bookImageURL() != null && !book.bookImageURL().isBlank()) {
+                sb.append(String.format("- 책표지 URL: %s%n", book.bookImageURL()));
+            }
+            if (book.description() != null && !book.description().isBlank()) {
+                sb.append(String.format("- 책소개: %s%n", book.description()));
+            }
             if (book.loanCnt() != null) {
                 sb.append(String.format("- 대출 건수: %d%n", book.loanCnt()));
             }
@@ -73,8 +91,7 @@ public class BookUsageAnalysisTool {
                 analysis.coLoanBooks().stream().limit(5).forEach(wrapper -> {
                     NaruBookInfo coLoanBook = wrapper.book();
                     if (coLoanBook != null) {
-                        sb.append(String.format("- %s / 저자: %s / ISBN: %s%n",
-                                coLoanBook.bookname(), coLoanBook.authors(), coLoanBook.isbn13()));
+                        appendRelatedBook(sb, coLoanBook);
                     }
                 });
             }
@@ -83,8 +100,7 @@ public class BookUsageAnalysisTool {
                 analysis.maniaRecBooks().stream().limit(5).forEach(wrapper -> {
                     NaruBookInfo recBook = wrapper.book();
                     if (recBook != null) {
-                        sb.append(String.format("- %s / 저자: %s / ISBN: %s%n",
-                                recBook.bookname(), recBook.authors(), recBook.isbn13()));
+                        appendRelatedBook(sb, recBook);
                     }
                 });
             }
@@ -93,8 +109,7 @@ public class BookUsageAnalysisTool {
                 analysis.readerRecBooks().stream().limit(5).forEach(wrapper -> {
                     NaruBookInfo recBook = wrapper.book();
                     if (recBook != null) {
-                        sb.append(String.format("- %s / 저자: %s / ISBN: %s%n",
-                                recBook.bookname(), recBook.authors(), recBook.isbn13()));
+                        appendRelatedBook(sb, recBook);
                     }
                 });
             }
@@ -103,5 +118,25 @@ public class BookUsageAnalysisTool {
             log.error("[Tool] getBookUsageAnalysis 실패", e);
             return "도서 이용 분석 정보를 조회하는 중 오류가 발생했습니다.";
         }
+    }
+
+    private void appendRelatedBook(StringBuilder sb, NaruBookInfo book) {
+        sb.append(String.format("- %s", book.bookname()));
+        if (book.authors() != null && !book.authors().isBlank()) {
+            sb.append(String.format(" / 저자: %s", book.authors()));
+        }
+        if (book.publisher() != null && !book.publisher().isBlank()) {
+            sb.append(String.format(" / 출판사: %s", book.publisher()));
+        }
+        if (book.publicationYear() != null && !book.publicationYear().isBlank()) {
+            sb.append(String.format(" / 출판년도: %s", book.publicationYear()));
+        }
+        if (book.isbn13() != null && !book.isbn13().isBlank()) {
+            sb.append(String.format(" / ISBN: %s", book.isbn13()));
+        }
+        if (book.vol() != null && !book.vol().isBlank()) {
+            sb.append(String.format(" / 권: %s", book.vol()));
+        }
+        sb.append(System.lineSeparator());
     }
 }

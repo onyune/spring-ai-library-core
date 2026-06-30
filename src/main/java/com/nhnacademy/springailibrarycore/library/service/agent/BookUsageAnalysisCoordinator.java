@@ -22,6 +22,7 @@ public class BookUsageAnalysisCoordinator {
         if (isbn13 == null || isbn13.isBlank()) {
             throw new IllegalArgumentException("ISBN 은 필수입니다.");
         }
+        // ISBN 형식 검증
         if (!isbn13.matches("\\d{10}|\\d{13}")) {
             throw new IllegalArgumentException("ISBN은 10자리 또는 13자리 숫자여야 합니다.");
         }

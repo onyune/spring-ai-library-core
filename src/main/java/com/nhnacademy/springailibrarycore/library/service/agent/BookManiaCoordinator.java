@@ -18,7 +18,7 @@ public class BookManiaCoordinator {
         if (isbn13 == null || isbn13.isBlank()) {
             throw new IllegalArgumentException("ISBN은 필수입니다.");
         }
-        // 입력 구분 ;
+        // 입력 구분 (;)
         String[] isbnList = isbn13.split(";");
         if (isbnList.length > 5) {
             throw new IllegalArgumentException("ISBN은 세미콜론(;)으로 구분하여 최대 5개까지 입력할 수 있습니다.");
