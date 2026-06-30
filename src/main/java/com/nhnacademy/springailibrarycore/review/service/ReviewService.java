@@ -49,16 +49,22 @@ public class ReviewService {
             throw new ReviewServiceException("존재하지 않는 도서 ID입니다. (ID: " + bookId + ")", HttpStatus.NOT_FOUND);
         }
 
-        // 작성된 리뷰 존재 여부 확인
-        if (!reviewRepository.existsByBookId(bookId)) {
-            log.info("[ReviewService] 작성된 리뷰가 없으므로 Agent 호출 및 캐싱 없이 즉시 종료 -> bookId: {}", bookId);
+        // 작성된 전체 리뷰 개수 확인 및 10개 미만 차단
+        long totalReviewCount = reviewRepository.countByBookId(bookId);
+        if (totalReviewCount < 10) {
+            log.info("[ReviewService] 전체 리뷰 개수가 10개 미만({}개)이므로 요약 생략 -> bookId: {}", totalReviewCount, bookId);
             SseEmitter emitter = new SseEmitter(180000L);
             reviewSseSender.addEmitter(bookId, emitter);
+
+            // 0개인 경우와 1~9개인 경우의 반환 메시지 세분화
+            String message = (totalReviewCount == 0) 
+                    ? "아직 작성된 독자 리뷰가 없습니다." 
+                    : String.format("리뷰가 최소 10개 이상 작성되어야 AI 리뷰 요약이 가능합니다. (현재 리뷰: %d개)", totalReviewCount);
 
             ReviewSummaryResponse emptyResponse = new ReviewSummaryResponse(
                     bookId,
                     ReviewStatus.DONE,
-                    "아직 작성된 독자 리뷰가 없습니다.",
+                    message,
                     null,
                     null
             );
@@ -76,7 +82,7 @@ public class ReviewService {
         if (cachedResponse != null) {
             Long lastReviewId = cachedResponse.lastProcessReviewId();
             if (lastReviewId != null) {
-                // 큐 발행 전에 신규 리뷰 개수를 먼저 확인!
+                // 큐 발행 전에 신규 리뷰 개수를 먼저 확인
                 long newReviewCount = reviewRepository.countByBookIdAndIdGreaterThan(bookId, lastReviewId);
                 log.info("[ReviewService] 기존 캐시 요약 존재. 신규 리뷰 개수: {}개", newReviewCount);
 
@@ -90,7 +96,7 @@ public class ReviewService {
         }
 
         // 캐시가 아예 없거나, 신규 리뷰가 10개 이상 쌓인 경우에만 비동기 큐 발행
-        log.info("[ReviewService] 캐시 미스 또는 신규 리뷰 10개 이상({}개) 확인. RabbitMQ 이벤트 발행", bookId);
+        log.info("[ReviewService] 캐시 미스 또는 신규 리뷰 10개 이상 확인. RabbitMQ 이벤트 발행 -> bookId: {}", bookId);
         rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, RabbitConfig.ROUTING_KEY, bookId);
 
         return emitter;

@@ -18,9 +18,6 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     //최근 리뷰 20개만 가져오기
     List<Review> findTop20ByBookIdOrderByCreatedAtDesc(Long bookId);
 
-    //리뷰 존재 여부 확인
-    boolean existsByBookId(Long bookId);
-
     //도서의 리뷰 목록 페이징 조회
     Page<Review> findByBookId(Long bookId, Pageable pageable);
 
@@ -29,5 +26,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     long countByBookIdAndIdGreaterThan(Long bookId, Long lastReviewId);
 
     boolean existsByBookIdAndReviewerId(Long bookId, String reviewerId);
+
+    long countByBookId(Long bookId);
 }
 
