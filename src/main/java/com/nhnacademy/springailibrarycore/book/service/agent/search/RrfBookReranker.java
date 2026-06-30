@@ -1,6 +1,6 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.search;
 
-import com.nhnacademy.springailibrarycore.book.dto.BookFeedbackStatistics;
+import com.nhnacademy.springailibrarycore.book.dto.FeedbackStats;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchPageResult;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
@@ -99,12 +99,22 @@ public class RrfBookReranker {
      */
     private List<BookSearchResponse> applyGlobalFeedbackScores(List<BookSearchResponse> candidates) {
         List<Long> bookIds = candidates.stream().map(BookSearchResponse::getId).toList();
-        Map<Long, BookFeedbackStatistics> statsMap = telegramFeedbackClient.getBooksFeedbackStats(bookIds);
+        Map<Long, FeedbackStats> statsMap = telegramFeedbackClient.getBooksFeedbackStats(bookIds);
 
         return candidates.stream().map(book -> {
-            BookFeedbackStatistics stats = statsMap.get(book.getId());
-            if (stats != null && stats.totalCount() >= 5) {
-                double feedbackBonus = stats.score() * 0.5;
+            FeedbackStats stats = statsMap.get(book.getId());
+            if (stats != null && stats.hasMinimumCount(5)) {
+                double feedbackBonus = 0.0;
+                double ratio = stats.goodRatio();
+
+                if (ratio >= 0.6) {
+                    // 긍정 비율 60% 이상: 가산
+                    feedbackBonus = stats.feedbackScore() * 0.5;
+                } else if (ratio <= 0.4) {
+                    // 긍정 비율 40% 이하: 감산
+                    feedbackBonus = stats.feedbackScore() * 0.5;
+                }
+
                 double finalScore = (book.getRrfScore() != null ? book.getRrfScore() : 0.0) + feedbackBonus;
                 return book.withRrfScore(finalScore);
             }
