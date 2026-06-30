@@ -3,6 +3,7 @@ package com.nhnacademy.springailibrarycore.library.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
+import lombok.Builder;
 
 /**
  * 정보공개 도서관 조회 API 응답 DTO 클래스입니다.
@@ -66,6 +67,7 @@ public record LibrarySearchResponse(
      * @param operatingTime 도서관 상세 운영시간 안내 정보
      * @param bookCount     도서관 보유 단행본 총 도서 수
      */
+    @Builder
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record LibraryInfo(
             String libCode,

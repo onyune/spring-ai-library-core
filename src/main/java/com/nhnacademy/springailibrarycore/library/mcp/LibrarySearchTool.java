@@ -37,7 +37,7 @@ public class LibrarySearchTool {
                 return "검색된 도서관이 없습니다.";
             }
 
-            // 토큰 절약 및 실시간 출력을 위해 마크다운 문자열로 가공
+            // 토큰 절약 을 위해 마크다운 문자열로 가공
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("📍 **도서관 검색 결과 (총 %d개):**\n", Math.min(list.size(), 10)));
             
