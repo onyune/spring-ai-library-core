@@ -1,13 +1,13 @@
 package com.nhnacademy.springailibrarycore.library.service;
 
 import com.nhnacademy.springailibrarycore.config.Data4LibraryApiProperties;
-import com.nhnacademy.springailibrarycore.library.dto.LibrarySearchResponse;
 import com.nhnacademy.springailibrarycore.library.dto.LibrarySearchResponse.LibraryInfo;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruBookInfo;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruResponse;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruWrapper;
 import com.nhnacademy.springailibrarycore.library.dto.request.*;
 import com.nhnacademy.springailibrarycore.library.dto.response.*;
+import com.nhnacademy.springailibrarycore.library.dto.response.BookExistResponse.ResultInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -159,7 +159,7 @@ public class LibraryNaruService {
      * @param request 소장/대출 여부 확인 조건 DTO
      * @return 소장 여부(Y/N) 및 대출 가능 여부(Y/N) 정보
      */
-    public BookExistResponse.ResultInfo checkBookExists(BookExistRequest request) {
+    public ResultInfo checkBookExists(BookExistRequest request) {
         BookExistResponse response = fetchFromApi("bookExist", request.toQueryParams(), BookExistResponse.class);
         return (response != null && response.response() != null) ? response.response().result() : null;
     }
