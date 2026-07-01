@@ -78,7 +78,7 @@ public class LibraryNaruService {
                 .map(NaruWrapper::getContent)
                 .toList();
     }
-
+//////////////////
     /**
      * 특정 도서와 함께 대출될 확률이 높은 마니아 추천 도서 조회 API를 호출합니다.
      * 입력받은 isbn13 도서의 대출이력 기반 조건부 확률 분석을 통해 추천을 생성
@@ -141,14 +141,19 @@ public class LibraryNaruService {
      * @param request 도서관/지역별 인기 대출 조건 DTO
      * @return 순위 및 도서관 정보가 포함된 도서 목록
      */
-    public List<NaruBookInfo> getLibPopularBooks(LibPopularBooksRequest request) {
+//    public List<NaruBookInfo> getLibPopularBooks(LibPopularBooksRequest request) {
+//        LibPopularBooksResponse response = fetchFromApi("loanItemSrchByLib", request.toQueryParams(), LibPopularBooksResponse.class);
+//        if (response == null || response.response() == null || response.response().docs() == null) {
+//            return List.of();
+//        }
+//        return response.response().docs().stream()
+//                .map(NaruWrapper::getContent)
+//                .toList();
+// 응답의 libNm, regionNm, dtlregionNm을 Tool 응답에 활용하기 위해 ResponseData를 반환합니다
+    public LibPopularBooksResponse.ResponseData getLibPopularBooks(LibPopularBooksRequest request) {
         LibPopularBooksResponse response = fetchFromApi("loanItemSrchByLib", request.toQueryParams(), LibPopularBooksResponse.class);
-        if (response == null || response.response() == null || response.response().docs() == null) {
-            return List.of();
-        }
-        return response.response().docs().stream()
-                .map(NaruWrapper::getContent)
-                .toList();
+
+        return (response != null) ? response.response() : null;
     }
 
     /**
@@ -208,7 +213,7 @@ public class LibraryNaruService {
     }
 
     /**
-     * 특정 도서관의 최근 등록일 기준 신도서(신착 도서) 목록을 조회합니다.
+     * 특정 ㄷ 최근 등록일 기준 신도서(신착 도서) 목록을 조회합니다.
      * 소속 도서관 코드(libCode)와 검색 연월(searchDt, yyyy-MM)을 사용하여 조회
      * searchDt가 생략되면 조회 당일의 연월이 디폴트로 지정
      * 가장 최근 등록된 신규 도서 리스트를 페이지 규격에 맞게 수집하여 반환
@@ -216,19 +221,24 @@ public class LibraryNaruService {
      * @param request 신착도서 조건 DTO
      * @return 등록일과 세부 정보가 매핑된 신간 도서 리스트
      */
-    public List<NaruBookInfo> getNewArrivalBooks(NewArrivalBookRequest request) {
-        var typeRef = new ParameterizedTypeReference<NaruResponse<NaruWrapper<NaruBookInfo>>>() {};
-        NaruResponse<NaruWrapper<NaruBookInfo>> response = fetchFromApi("newArrivalBook", request.toQueryParams(), typeRef);
+//    public List<NaruBookInfo> getNewArrivalBooks(NewArrivalBookRequest request) {
+//        var typeRef = new ParameterizedTypeReference<NaruResponse<NaruWrapper<NaruBookInfo>>>() {};
+//        NaruResponse<NaruWrapper<NaruBookInfo>> response = fetchFromApi("newArrivalBook", request.toQueryParams(), typeRef);
+//
+//        if (response == null || response.response() == null) {
+//            return List.of();
+//        }
+//        return response.response().getItems().stream()
+//                .map(NaruWrapper::getContent)
+//                .toList();
+//    }
 
-        if (response == null || response.response() == null) {
-            return List.of();
-        }
-        return response.response().getItems().stream()
-                .map(NaruWrapper::getContent)
-                .toList();
+    public NewArrivalBooksResponse.ResponseData getNewArrivalBooks(NewArrivalBookRequest request) {
+        NewArrivalBooksResponse response = fetchFromApi("newArrivalBook",  request.toQueryParams(), NewArrivalBooksResponse.class);
+        return (response != null) ? response.response() : null;
     }
 
-
+//////////////////////
     /**
      * 제네릭 타입 파싱(TypeReference)이 필요한 공통 리스트 API 처리용 메서드
      */
