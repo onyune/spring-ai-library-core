@@ -1,5 +1,6 @@
 package com.nhnacademy.springailibrarycore.book.service.preference;
 
+import com.nhnacademy.springailibrarycore.book.dto.EmbeddingResponse;
 import com.nhnacademy.springailibrarycore.book.dto.FeedbackLikedBooksResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
 import com.nhnacademy.springailibrarycore.telegram.client.TelegramFeedbackClient;
@@ -22,24 +23,24 @@ public class UserPreferenceVectorService {
      * @return 사용자의 선호도 벡터
      */
     @Cacheable(cacheNames = "userPreferenceVector", key = "#chatId")
-    public float[] getUserPreferenceVector(Long chatId) {
+    public EmbeddingResponse getUserPreferenceVector(Long chatId) {
         log.info("캐시 miss: chatId {}의 선호도 벡터를 새로 계산합니다.", chatId);
         FeedbackLikedBooksResponse response = telegramFeedbackClient.getLikedBooks(chatId);
 
         List<Long> likedBookIds = response.bookIds();
         if (likedBookIds == null || likedBookIds.isEmpty()) {
-            return new float[0];
+            return new EmbeddingResponse(new float[0]);
         }
 
         List<float[]> bookVectors = bookRepository.findEmbeddingByBookIds(likedBookIds);
 
         if (bookVectors.isEmpty()) {
-            return new float[0];
+            return new EmbeddingResponse(new float[0]);
         }
 
         return calculateAverageVector(bookVectors);
     }
-    private float[] calculateAverageVector(List<float[]> bookVectors){
+    private EmbeddingResponse calculateAverageVector(List<float[]> bookVectors){
         int dimensions = bookVectors.get(0).length;
         float[] average = new float[dimensions];
 
@@ -52,6 +53,7 @@ public class UserPreferenceVectorService {
         for(int i =0; i<dimensions;i++){
             average[i] /= bookVectors.size();
         }
-        return average;
+
+        return new EmbeddingResponse(average);
     }
 }
