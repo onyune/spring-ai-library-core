@@ -58,7 +58,7 @@ public class VectorSearchStrategy implements SearchStrategy {
                 keyword,
                 queryVector
         );
-        
+
         if (cachedResult.isPresent()) {
             List<BookSearchResponse> list = cachedResult.get();
             return BookSearchPageResult.paginate(list, pageable);
@@ -68,11 +68,12 @@ public class VectorSearchStrategy implements SearchStrategy {
                 keyword,
                 request.isbn(),
                 SearchType.VECTOR,
-                queryVector
+                queryVector,
+                request.chatId()
         );
         log.info("[VectorSearchStrategy] 벡터 서치 시작 - keyword: {}", keyword);
         BookSearchPageResult result = bookRepository.vectorSearch(pageable, dbRequest);
-        
+
         /* ============ 결과를 시맨틱 캐시에 저장 (첫 페이지 또는 전체 결과를 캐싱할지 결정 필요, 임시로 현재 결과 저장) ============*/
         if (!result.getContent().isEmpty() && pageable.getPageNumber() == 0) {
             semanticCacheService.save(
@@ -82,7 +83,7 @@ public class VectorSearchStrategy implements SearchStrategy {
                     result.getContent()
             );
         }
-        
+
         return result;
     }
 }

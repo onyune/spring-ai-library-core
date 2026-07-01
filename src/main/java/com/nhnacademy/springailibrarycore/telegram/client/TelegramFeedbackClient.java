@@ -2,18 +2,16 @@ package com.nhnacademy.springailibrarycore.telegram.client;
 
 import com.nhnacademy.springailibrarycore.book.dto.FeedbackLikedBooksResponse;
 import com.nhnacademy.springailibrarycore.book.dto.FeedbackStats;
+import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.net.URI;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -53,15 +51,16 @@ public class TelegramFeedbackClient {
         try {
             log.info("[FeedbackService] 도서 {}권에 대한 피드백 통계 Map 직접 조회 요청", bookIds.size());
 
-            String url = telegramRepositoryUrl + "/api/admin/feedback/books/stats";
+            URI uri = UriComponentsBuilder
+                    .fromUriString(telegramRepositoryUrl + "/api/admin/feedback/books/stats")
+                    .queryParam("bookIds", bookIds)
+                    .build()
+                    .toUri();
 
-            Map<Long, FeedbackStats> statsMap = restClient.post()
-                    .uri(URI.create(url))
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(bookIds)
+            Map<Long, FeedbackStats> statsMap = restClient.get()
+                    .uri(uri)
                     .retrieve()
                     .body(new ParameterizedTypeReference<Map<Long, FeedbackStats>>() {});
-
             if (statsMap == null) {
                 return Collections.emptyMap();
             }
