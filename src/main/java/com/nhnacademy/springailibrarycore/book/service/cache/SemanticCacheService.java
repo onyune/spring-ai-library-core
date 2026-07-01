@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.service.cache;
 
 import com.nhnacademy.springailibrarycore.book.domain.BookSearchCache;
+import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.repository.BookSearchCacheRepository;
 import java.time.Clock;
@@ -51,21 +52,23 @@ public class SemanticCacheService {
         this.clock = clock;
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(readOnly = true)
     public Optional<List<BookSearchResponse>> findCachedResult(
+            SearchType searchType,
             String question,
             float[] questionVector
     ) {
         // 레포지터리에서 질문과 유사한 것들 찾기
         Optional<BookSearchCache> matchedCache =
                 cacheRepository.findBestMatch(
+                        searchType,
                         questionVector,
                         cacheThreshold
                 );
 
         // 비어있으면 캐시 미스로 빈값 리턴
         if (matchedCache.isEmpty()) {
-            log.info("[시맨틱 캐시 Miss] 질문={}", question);
+            log.info("[시맨틱 캐시 Miss SearchType= {}] 질문={}", searchType,question);
             return Optional.empty();
         }
 
@@ -76,20 +79,21 @@ public class SemanticCacheService {
         // DTO가 비어있으면 캐시 삭제
         if (cachedRecommendations.isEmpty()) {
             cacheRepository.delete(cache);
-            log.info("[시맨틱 캐시 무효화] 빈 추천 결과 삭제: 질문={}", cache.getQuery());
+            log.info("[시맨틱 캐시 무효화 SearchType= {}] 빈 추천 결과 삭제: 질문={}", searchType, cache.getQuery());
             return Optional.empty();
         }
 
         // 캐시 접근 기록 갱신
         cache.recordAccess(OffsetDateTime.now(clock)); //Dirty checking
 
-        log.info("[시맨틱 캐시 Hit] 질문={}, 캐시 질문={}, 기준 유사도={}", question, cache.getQuery(), cacheThreshold);
+        log.info("[시맨틱 캐시 Hit SearchType= {}] 질문={}, 캐시 질문={}, 기준 유사도={}", searchType,question, cache.getQuery(), cacheThreshold);
         // 추천 캐시 결과물 반환
         return Optional.of(cachedRecommendations);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void save(
+            SearchType searchType,
             String question,
             float[] questionVector,
             List<BookSearchResponse> recommendations
@@ -97,6 +101,7 @@ public class SemanticCacheService {
         // 캐시 생성
         BookSearchCache cache = BookSearchCache.create(
                 question,
+                searchType,
                 questionVector,
                 cacheCodec.encode(recommendations),
                 OffsetDateTime.now(clock),

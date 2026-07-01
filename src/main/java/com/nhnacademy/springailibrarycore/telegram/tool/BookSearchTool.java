@@ -25,7 +25,7 @@ public class BookSearchTool {
             @ToolParam(description = "사용자의 채팅방 ID (chatId)") Long chatId
     ) {
         // SearchType.RAG로 요청 생성
-        BookSearchRequest request = new BookSearchRequest(query, null, SearchType.RAG, null, false, chatId);
+        BookSearchRequest request = new BookSearchRequest(query, null, SearchType.RAG, null, chatId);
 
         // BookSearchAgent
         BookSearchResult result = bookSearchAgent.searchBooks(PageRequest.of(0, 3), request);

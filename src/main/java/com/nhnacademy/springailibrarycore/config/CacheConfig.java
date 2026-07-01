@@ -14,6 +14,9 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -24,16 +27,12 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * 일반 캐싱(@Cacheable, @CacheEvict 등)용 Redis 설정입니다.
+ * 일반 캐싱(@Cacheable, @CacheEvict 등)용 Redis, Caffein 설정입니다.
  *
- * bookSearch  - 도서 검색 결과 (10분)
- * bookDetail  - 도서 상세 정보 (1시간)
- * embedding   - 임베딩 벡터 결과 (24시간)
- * 그 외 기본값         - 30분
  */
 @Configuration
 @EnableCaching
-public class RedisCacheConfig {
+public class CacheConfig {
 
     @Value("${spring.data.redis.host}")
     private String redisHost;
@@ -48,8 +47,11 @@ public class RedisCacheConfig {
     @Value("${spring.data.redis.cache.database:0}")
     private int cacheDatabase;
 
-    public static final String CACHE_BOOK_SEARCH  = "bookSearch";
+    public static final String CACHE_KEYWORD_SEARCH = "keywordSearch";
+    public static final String CACHE_VECTOR_SEARCH  = "vectorSearch";
+    public static final String CACHE_HYBRID_SEARCH  = "hybridSearch";
     public static final String CACHE_EMBEDDING    = "embedding_v4";
+    public static final String CACHE_QUERY_ANALYSIS = "queryAnalysisCache";
 
     /**
      * 일반 캐싱 전용
@@ -72,8 +74,23 @@ public class RedisCacheConfig {
      * 직렬화: 키는 String, 값은 JSON(Jackson)으로 저장
      * LocalDate 등 Java 8 Time 타입도 JavaTimeModule로 처리
      */
+    /**
+     * L1 로컬 메모리 캐시 (Caffeine)
+     */
     @Bean
-    public CacheManager cacheManager(
+    public CacheManager caffeineCacheManager() {
+        CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+        cacheManager.setCaffeine(Caffeine.newBuilder()
+                .maximumSize(1000)
+                .expireAfterWrite(Duration.ofMinutes(10)));
+        return cacheManager;
+    }
+
+    /**
+     * L2 원격 분산 캐시 (Redis)
+     */
+    @Bean
+    public CacheManager redisCacheManager(
             @Qualifier("cacheRedisConnectionFactory")
             RedisConnectionFactory connectionFactory
     ) {
@@ -105,13 +122,28 @@ public class RedisCacheConfig {
 
         // 캐시별 TTL 개별 설정
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        cacheConfigurations.put(CACHE_BOOK_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3))); // TODO: 캐시 시간 상의하기
+        cacheConfigurations.put(CACHE_KEYWORD_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3)));
+        cacheConfigurations.put(CACHE_VECTOR_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3)));
+        cacheConfigurations.put(CACHE_HYBRID_SEARCH, defaultConfig.entryTtl(Duration.ofHours(3)));
         cacheConfigurations.put(CACHE_EMBEDDING, defaultConfig.entryTtl(Duration.ofHours(24)));
+        cacheConfigurations.put(CACHE_QUERY_ANALYSIS, defaultConfig.entryTtl(Duration.ofHours(24)));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
+    }
+
+    /**
+     * L1(Caffeine) -> L2(Redis Exact Match) 순차 조회를 위한 Composite Manager
+     */
+    @Primary
+    @Bean
+    public CacheManager cacheManager(
+            @Qualifier("caffeineCacheManager") CacheManager caffeineCacheManager,
+            @Qualifier("redisCacheManager") CacheManager redisCacheManager
+    ) {
+        return new MultiLevelCacheManager(caffeineCacheManager, redisCacheManager);
     }
 
 

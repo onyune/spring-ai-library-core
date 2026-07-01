@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.repository.impl;
 
 import com.nhnacademy.springailibrarycore.book.domain.BookSearchCache;
+import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import com.nhnacademy.springailibrarycore.book.repository.BookSearchCacheRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -29,6 +30,7 @@ public class BookSearchCacheRepositoryImpl
      */
     @Override
     public Optional<BookSearchCache> findBestMatch(
+            SearchType searchType,
             float[] queryEmbedding,
             double similarityThreshold
     ) {
@@ -40,6 +42,7 @@ public class BookSearchCacheRepositoryImpl
                         SELECT cache.*
                         FROM book_search_cache cache
                         WHERE cache.expires_at > CURRENT_TIMESTAMP 
+                          AND cache.search_type = :searchType
                           AND 1.0 - (
                               cache.query_embedding
                               <=> CAST(:queryEmbedding AS vector)
@@ -48,6 +51,10 @@ public class BookSearchCacheRepositoryImpl
                                  <=> CAST(:queryEmbedding AS vector)
                         LIMIT 1
                         """, BookSearchCache.class)
+                .setParameter(
+                        "searchType",
+                        searchType.name()
+                )
                 .setParameter(
                         "queryEmbedding",
                         Arrays.toString(queryEmbedding)

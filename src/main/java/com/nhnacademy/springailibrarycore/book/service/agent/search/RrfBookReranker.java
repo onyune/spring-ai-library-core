@@ -6,6 +6,7 @@ import com.nhnacademy.springailibrarycore.book.dto.BookSearchRequest;
 import com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse;
 import com.nhnacademy.springailibrarycore.book.service.preference.UserPreferenceService;
 import com.nhnacademy.springailibrarycore.book.strategy.impl.HybridSearchStrategy;
+import com.nhnacademy.springailibrarycore.book.client.CohereRerankClient;
 import com.nhnacademy.springailibrarycore.telegram.client.TelegramFeedbackClient;
 import java.util.Comparator;
 import java.util.List;
@@ -24,16 +25,17 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RrfBookReranker {
 
-    @Value("${rrf.retrieval.k}")
+    @Value("${hybrid.search.candidate}")
     private int retrieval_k;
-    @Value("${rrf.rerank.k}")
-    private int rerank_k;
+    @Value("${rrf.business.filter.k}")
+    private int businessFilterK;
     @Value("${rrf.score.threshold}")
     private double rrfScoreThreshold;
 
     private final HybridSearchStrategy hybridSearchStrategy;
     private final UserPreferenceService userPreferenceService;
     private final TelegramFeedbackClient telegramFeedbackClient;
+    private final CohereRerankClient cohereRerankClient;
 
     public List<BookSearchResponse> reranker(BookSearchRequest request) {
         // ------- HYBRID 전략 으로 도서 리스트 검색 -------
@@ -47,12 +49,33 @@ public class RrfBookReranker {
         if (candidates == null || candidates.isEmpty()) {
             return List.of();
         }
-        // -------- 가중치 부여 global or personalization ------------
+        // -------- 2차망: 가중치 부여 global or personalization (Business Reranking) ------------
         candidates = applyAdditionalScores(candidates, request.chatId());
 
-        List<BookSearchResponse> topBooks = filterAndLimitCandidates(candidates);
+        // 비즈니스 점수로 30권(rerank_k) 압축
+        List<BookSearchResponse> businessFilteredBooks = filterAndLimitCandidates(candidates);
+        
+        if (businessFilteredBooks.isEmpty()) {
+            return List.of();
+        }
 
-        log.info("[RAG Top-K] Retrieval {}권 → Rerank {}권", retrievalResult.getContent().size(), topBooks.size());
+        // -------- 3차망: Cross-Encoder (Cohere API) 정밀 리랭킹 ------------
+        // 책 제목과 소개글을 묶어서 Cohere에 전송
+        List<String> documentTexts = businessFilteredBooks.stream()
+                .map(book -> book.getTitle() + " " + (book.getBookContent() != null ? book.getBookContent() : ""))
+                .toList();
+
+        // Cohere가 가장 관련성 높다고 판단한 상위 20개의 원본 인덱스 반환
+        List<Integer> bestIndexes = cohereRerankClient.rerank(request.keyword(), documentTexts);
+
+        // 인덱스를 기반으로 최종 20권 필터링
+        List<BookSearchResponse> topBooks = bestIndexes.stream()
+                .map(businessFilteredBooks::get)
+                .toList();
+
+        log.info("[RAG Top-K] Retrieval {}권 → Business Rerank {}권 → CrossEncoder {}권", 
+                 retrievalResult.getContent().size(), businessFilteredBooks.size(), topBooks.size());
+                 
         return topBooks;
     }
 
@@ -138,11 +161,11 @@ public class RrfBookReranker {
         // ----------- rrf 점수 하한선 이상으로 5개만 추출 -----------
         List<BookSearchResponse> topBooks = rankedBooks.stream()
                 .filter(book -> book.getRrfScore() >= rrfScoreThreshold)
-                .limit(rerank_k)
+                .limit(businessFilterK)
                 .toList();
         // --------- 하한선 통과 결과가 없을 시 rrfScore가 높은 순서대로 5개만 추출하는 fallback ---------
         if (topBooks.isEmpty() && !rankedBooks.isEmpty()) {
-            topBooks = rankedBooks.stream().limit(rerank_k).toList();
+            topBooks = rankedBooks.stream().limit(businessFilterK).toList();
             log.info("[RAG Top-K] 임계값 통과 결과가 없어 상위 {}권을 fallback으로 사용", topBooks.size());
         } else {
             log.info("[RAG Top-K] 임계값 통과: {}", topBooks.size());

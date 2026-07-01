@@ -50,6 +50,7 @@ public class RagSearchStrategy implements SearchStrategy {
         /* ============ 캐시 조회 ============*/
 
         Optional<List<BookSearchResponse>> cachedResult = semanticCacheService.findCachedResult(
+                SearchType.RAG,
                 normalizedQuestion,
                 questionVector
         );
@@ -64,10 +65,9 @@ public class RagSearchStrategy implements SearchStrategy {
                 normalizedQuestion,
                 request.isbn(),
                 request.searchType(),
-                questionVector,
-                request.warmUp()
+                questionVector
         );
-        // --------------- RRF Rerank: 상위 5권 추출 ---------------
+        // --------------- RRF Rerank + Cohere API: 상위 최대 10권 추출 ---------------
         List<BookSearchResponse> topBooks = rrfBookReranker.reranker(vectorizedRequest);
 
         if (topBooks.isEmpty()) {
@@ -75,18 +75,25 @@ public class RagSearchStrategy implements SearchStrategy {
             return new BookSearchPageResult(List.of(), 0);
         }
 
-        // ---------- AI 추천 사유 부여 ----------
+        // ---------- AI 추천 사유 부여 최대 5권에 AI Comment 부여----------
         List<BookSearchResponse> enrichedBooks = bookRecommendationAgent.enrich(normalizedQuestion, topBooks);
 
         /* ============ 결과를 캐시에 저장 ============*/
         if(!enrichedBooks.isEmpty()){
-            semanticCacheService.save(
-                    normalizedQuestion,
-                    questionVector,
-                    enrichedBooks
-            );
+            try {
+                semanticCacheService.save(
+                        SearchType.RAG,
+                        normalizedQuestion,
+                        questionVector,
+                        enrichedBooks
+                );
+            } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                log.warn("[RagSearchStrategy] 동시 캐시 저장 충돌 발생 (무시함): {}", normalizedQuestion);
+            }
         }
 
         return new BookSearchPageResult(enrichedBooks, enrichedBooks.size());
     }
+
+
 }

@@ -51,6 +51,7 @@ public class LibrarySearchAgent {
             log.info("[LibrarySearchAgent] 전국 도서관 정보 캐시 갱신 시작...");
 
             List<LibraryInfo> tempLibraryList = new java.util.ArrayList<>();
+
             Map<String, LibraryInfo> tempLibraryInfoMap = new java.util.HashMap<>();
 
             int pageNo = 1;

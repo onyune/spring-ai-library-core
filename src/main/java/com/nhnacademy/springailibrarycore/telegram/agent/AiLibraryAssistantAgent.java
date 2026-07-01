@@ -44,7 +44,7 @@ public class AiLibraryAssistantAgent {
                         1. 도서 검색/추천 정보인 경우:
                            - 해당 도서의 ID를 `bookId` 필드에 넣으세요.
                            - `answer` 필드는 반드시 아래 마크다운 양식을 엄격하게 지켜 작성하세요:
-                             **[title]**
+                             제목: [title]
                              저자: [authorName]
                              출판사: [publisherName]
                              연관도: [relevance]% (relevance가 있는 경우만 출력)
@@ -56,7 +56,7 @@ public class AiLibraryAssistantAgent {
                            - `bookId` 필드를 `null`로 설정하세요.
                            - `answer` 필드에 친절하고 가독성 좋은 일반 마크다운 텍스트로 자유롭게 답변을 작성하세요.
                         
-                        3. ⚠️ 두 가지를 동시에 물어본 경우:
+                        3. 두 가지를 동시에 물어본 경우:
                            - 일반 정보 답변 항목(bookId: null)과 도서 추천 답변 항목(bookId: 숫자)들을 하나의 배열에 모두 포함해서 반환하세요.
                         """)
                 .defaultTools(popularBookSearchTool,

@@ -8,7 +8,6 @@ import com.nhnacademy.springailibrarycore.book.dto.BookSearchResult;
 import com.nhnacademy.springailibrarycore.book.exception.DuplicateSearchStrategyException;
 import com.nhnacademy.springailibrarycore.book.exception.NotFoundSearchStrategyException;
 import com.nhnacademy.springailibrarycore.book.strategy.SearchStrategy;
-
 import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchAgent;
 import com.nhnacademy.springailibrarycore.book.strategy.impl.AutoSearchAgent.SearchIntent;
 import java.util.EnumMap;
@@ -21,14 +20,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 요청된 검색 유형에 맞는 전랷을 선택하는 검색 지입점
  * 키워드, 벡터, 하이브리드, RAG, AUTO 검색의 구체적인 구현을 Strategy에 위임
  */
 @Service
-@Transactional(readOnly = true)
 @Slf4j
 public class BookSearchAgent {
     private final Map<SearchType, SearchStrategy> strategyMap;
@@ -78,8 +75,7 @@ public class BookSearchAgent {
                 targetKeyword,
                 bookSearchRequest.isbn(),
                 targetSearchType,
-                bookSearchRequest.vector(),
-                bookSearchRequest.warmUp()
+                bookSearchRequest.vector()
         );
 
         BookSearchPageResult result = strategy.search(pageable, refinedRequest);

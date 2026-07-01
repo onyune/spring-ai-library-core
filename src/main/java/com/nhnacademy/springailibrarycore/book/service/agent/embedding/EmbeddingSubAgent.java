@@ -1,6 +1,6 @@
 package com.nhnacademy.springailibrarycore.book.service.agent.embedding;
 
-import static com.nhnacademy.springailibrarycore.config.RedisCacheConfig.CACHE_EMBEDDING;
+import static com.nhnacademy.springailibrarycore.config.CacheConfig.CACHE_EMBEDDING;
 
 import com.nhnacademy.springailibrarycore.book.dto.EmbeddingResponse;
 import org.springframework.ai.embedding.EmbeddingModel;

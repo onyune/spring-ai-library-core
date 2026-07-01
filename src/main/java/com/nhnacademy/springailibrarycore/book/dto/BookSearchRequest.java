@@ -17,26 +17,14 @@ public record BookSearchRequest(
 
         SearchType searchType,
         float[] vector,
-        Boolean warmUp,
         Long chatId
 ) {
     public BookSearchRequest {
         searchType = searchType == null ? SearchType.KEYWORD : searchType;
-        warmUp = warmUp != null && warmUp;
     }
 
     public BookSearchRequest(String keyword, String isbn) {
-        this(keyword, isbn, SearchType.KEYWORD, null, false, null);
-    }
-
-    public BookSearchRequest(
-            String keyword,
-            String isbn,
-            SearchType searchType,
-            float[] vector,
-            Boolean warmUp
-    ) {
-        this(keyword, isbn, searchType, vector, warmUp, null);
+        this(keyword, isbn, SearchType.KEYWORD, null, null);
     }
 
     public BookSearchRequest(
@@ -45,7 +33,7 @@ public record BookSearchRequest(
             SearchType searchType,
             float[] vector
     ) {
-        this(keyword, isbn, searchType, vector, false, null);
+        this(keyword, isbn, searchType, vector, null);
     }
 
     @Override
@@ -60,13 +48,12 @@ public record BookSearchRequest(
                 && Objects.equals(isbn, that.isbn)
                 && searchType == that.searchType
                 && Arrays.equals(vector, that.vector)
-                && Objects.equals(warmUp, that.warmUp)
                 && Objects.equals(chatId, that.chatId);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(keyword, isbn, searchType, warmUp, chatId);
+        int result = Objects.hash(keyword, isbn, searchType, chatId);
         return 31 * result + Arrays.hashCode(vector);
     }
 }
