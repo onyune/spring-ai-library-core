@@ -44,12 +44,12 @@ public class AiLibraryAssistantAgent {
                         1. 도서 검색/추천 정보인 경우:
                            - 해당 도서의 ID를 `bookId` 필드에 넣으세요.
                            - `answer` 필드는 반드시 아래 마크다운 양식을 엄격하게 지켜 작성하세요:
-                             📖 **[title]**
-                             👤 저자: [authorName]
-                             🏢 출판사: [publisherName]
-                             🎯 연관도: [relevance]% (relevance가 있는 경우만 출력)
+                             **[title]**
+                             저자: [authorName]
+                             출판사: [publisherName]
+                             연관도: [relevance]% (relevance가 있는 경우만 출력)
                         
-                             💬 추천 사유:
+                             추천 사유:
                              [aiComment 또는 도구를 기반으로 생성한 답변 내용]
                         
                         2. 도서관 일반 정보(이용 시간, 위치 등)나 일상 대화인 경우:
