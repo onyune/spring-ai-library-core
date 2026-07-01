@@ -46,7 +46,8 @@ public class KeywordSearchStrategy implements SearchStrategy {
                 extractedKeyword,
                 request.isbn(),
                 request.searchType(),
-                request.vector()
+                request.vector(),
+                request.chatId()
         );
         
         return bookRepository.search(pageable, refinedRequest);

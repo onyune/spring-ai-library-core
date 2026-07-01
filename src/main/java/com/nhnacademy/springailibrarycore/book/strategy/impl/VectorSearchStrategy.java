@@ -68,7 +68,8 @@ public class VectorSearchStrategy implements SearchStrategy {
                 keyword,
                 request.isbn(),
                 SearchType.VECTOR,
-                queryVector
+                queryVector,
+                request.chatId()
         );
         log.info("[VectorSearchStrategy] 벡터 서치 시작 - keyword: {}", keyword);
         BookSearchPageResult result = bookRepository.vectorSearch(pageable, dbRequest);

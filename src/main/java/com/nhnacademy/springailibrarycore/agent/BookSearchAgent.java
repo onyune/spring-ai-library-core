@@ -75,7 +75,8 @@ public class BookSearchAgent {
                 targetKeyword,
                 bookSearchRequest.isbn(),
                 targetSearchType,
-                bookSearchRequest.vector()
+                bookSearchRequest.vector(),
+                bookSearchRequest.chatId()
         );
 
         BookSearchPageResult result = strategy.search(pageable, refinedRequest);
