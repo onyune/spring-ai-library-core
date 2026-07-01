@@ -89,7 +89,8 @@ public class HybridSearchStrategy implements SearchStrategy {
                     keyword,
                     request.isbn(),
                     queryVector,
-                    candidatePage
+                    candidatePage,
+                    request.chatId()
             );
             
             /* ============ 결과를 시맨틱 캐시에 저장 ============*/
@@ -120,11 +121,12 @@ public class HybridSearchStrategy implements SearchStrategy {
             String keyword,
             String isbn,
             float[] queryVector,
-            Pageable candidatePage
+            Pageable candidatePage,
+            Long chatId
     ) {
         // ---------- KEYWORD 전략 (가상 스레드 기반 병렬 비동기 실행) -------------
         BookSearchRequest keywordRequest = new BookSearchRequest(
-                keyword, isbn, SearchType.KEYWORD, null
+                keyword, isbn, SearchType.KEYWORD, null,null
         );
         CompletableFuture<List<BookSearchResponse>> keywordFuture = CompletableFuture.supplyAsync(
                 () -> keywordSearchStrategy.search(candidatePage, keywordRequest).getContent(),
@@ -133,7 +135,7 @@ public class HybridSearchStrategy implements SearchStrategy {
 
         // ---------------- VECTOR 전략 (가상 스레드 기반 병렬 비동기 실행 + 4초 타임아웃/폴백) --------------
         BookSearchRequest vectorRequest = new BookSearchRequest(
-                keyword, isbn, SearchType.VECTOR, queryVector
+                keyword, isbn, SearchType.VECTOR, queryVector, chatId
         );
         CompletableFuture<List<BookSearchResponse>> vectorFuture = CompletableFuture.supplyAsync(
                 () -> vectorSearchStrategy.search(candidatePage, vectorRequest).getContent(),

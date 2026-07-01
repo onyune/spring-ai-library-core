@@ -27,15 +27,6 @@ public record BookSearchRequest(
         this(keyword, isbn, SearchType.KEYWORD, null, null);
     }
 
-    public BookSearchRequest(
-            String keyword,
-            String isbn,
-            SearchType searchType,
-            float[] vector
-    ) {
-        this(keyword, isbn, searchType, vector, null);
-    }
-
     @Override
     public boolean equals(Object other) {
         if (this == other) {

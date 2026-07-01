@@ -65,7 +65,8 @@ public class RagSearchStrategy implements SearchStrategy {
                 normalizedQuestion,
                 request.isbn(),
                 request.searchType(),
-                questionVector
+                questionVector,
+                request.chatId()
         );
         // --------------- RRF Rerank + Cohere API: 상위 최대 10권 추출 ---------------
         List<BookSearchResponse> topBooks = rrfBookReranker.reranker(vectorizedRequest);

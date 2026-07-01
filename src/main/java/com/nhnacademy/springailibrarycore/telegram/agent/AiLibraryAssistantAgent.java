@@ -22,7 +22,7 @@ public class AiLibraryAssistantAgent {
     private final ChatClient chatClient;
 
     public AiLibraryAssistantAgent(
-            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
+            @Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClientBuilder,
             PopularBookSearchTool popularBookSearchTool,
             LibrarySearchTool librarySearchTool,
             BookSearchTool bookSearchTool,
