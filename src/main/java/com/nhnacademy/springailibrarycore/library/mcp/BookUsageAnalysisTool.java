@@ -3,6 +3,7 @@ package com.nhnacademy.springailibrarycore.library.mcp;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruBookInfo;
 import com.nhnacademy.springailibrarycore.library.dto.response.NaruBookUsageAnalysisResponse;
 import com.nhnacademy.springailibrarycore.library.service.agent.BookUsageAnalysisCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BookUsageAnalysisTool {
     private final BookUsageAnalysisCoordinator bookUsageAnalysisCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(description = "ISBN을 기준으로 도서의 이용 분석 정보를 조회합니다. 서지정보, 대출 추이, 주 이용자 그룹, 핵심 키워드, 동시대출 도서, 추천도서를 제공합니다.")
     public String getBookUsageAnalysis(
@@ -23,7 +25,7 @@ public class BookUsageAnalysisTool {
         try {
             NaruBookUsageAnalysisResponse.ResponseData analysis = bookUsageAnalysisCoordinator.getBookUsageAnalysis(isbn13);
             if (analysis == null || analysis.book() == null){
-                return "도서 이용 분석 정보를 찾을 수 없습니다.";
+                return "FAIL: 도서 이용 분석 정보를 찾을 수 없습니다.";
             }
             NaruBookInfo book = analysis.book();
 
@@ -113,10 +115,17 @@ public class BookUsageAnalysisTool {
                     }
                 });
             }
-            return sb.toString();
+
+            String report = sb.toString();
+
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            return "SUCCESS: 도서 이용 분석 정보 조회가 완료되었습니다.";
+
         } catch(Exception e) {
             log.error("[Tool] getBookUsageAnalysis 실패", e);
-            return "도서 이용 분석 정보를 조회하는 중 오류가 발생했습니다.";
+            return "FAIL: 도서 이용 분석 정보를 조회하는 중 오류가 발생했습니다.";
         }
     }
 
