@@ -3,11 +3,14 @@ package com.nhnacademy.springailibrarycore.book.domain;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.OffsetDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +25,9 @@ import org.hibernate.type.SqlTypes;
  * 보관합니다.
  */
 @Entity
-@Table(name = "book_search_cache")
+@Table(name = "book_search_cache", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"query", "search_type"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class BookSearchCache {
@@ -61,8 +66,13 @@ public class BookSearchCache {
     @Column(name = "ttl_seconds", nullable = false)
     private int ttlSeconds;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "search_type", nullable = false)
+    private SearchType searchType;
+
     private BookSearchCache(
             String query,
+            SearchType searchType,
             float[] queryEmbedding,
             String result,
             OffsetDateTime createdAt,
@@ -82,6 +92,7 @@ public class BookSearchCache {
         }
 
         this.query = query.trim();
+        this.searchType = searchType;
         this.queryEmbedding = queryEmbedding.clone();
         this.result = result;
         this.createdAt = createdAt;
@@ -92,6 +103,7 @@ public class BookSearchCache {
 
     public static BookSearchCache create(
             String query,
+            SearchType searchType,
             float[] queryEmbedding,
             String result,
             OffsetDateTime createdAt,
@@ -99,6 +111,7 @@ public class BookSearchCache {
     ) {
         return new BookSearchCache(
                 query,
+                searchType,
                 queryEmbedding,
                 result,
                 createdAt,

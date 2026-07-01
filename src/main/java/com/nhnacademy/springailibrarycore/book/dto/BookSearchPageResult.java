@@ -2,6 +2,7 @@ package com.nhnacademy.springailibrarycore.book.dto;
 
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,4 +21,13 @@ public class BookSearchPageResult implements Serializable {
 
     private List<BookSearchResponse> content;
     private long totalElements;
+
+    public static BookSearchPageResult paginate(List<BookSearchResponse> list, org.springframework.data.domain.Pageable pageable) {
+        int start = Math.toIntExact(pageable.getOffset());
+        if (start >= list.size()) {
+            return new BookSearchPageResult(List.of(), list.size());
+        }
+        int end = Math.min(start + pageable.getPageSize(), list.size());
+        return new BookSearchPageResult(new ArrayList<>(list.subList(start, end)), list.size());
+    }
 }

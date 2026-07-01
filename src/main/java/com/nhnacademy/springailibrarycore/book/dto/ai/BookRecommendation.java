@@ -1,5 +1,6 @@
 package com.nhnacademy.springailibrarycore.book.dto.ai;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import org.springframework.context.annotation.Description;
 
 /**
@@ -13,8 +14,10 @@ public record BookRecommendation(
         @Description("입력으로 받은 bookId 그대로")
         Long bookId,
         @Description("질문과의 연관성 점수 0~100 정수")
+        @JsonAlias({"score", "연관도"})
         Integer relevance,
         @Description("이 도서를 추천하는 이유, 한국어 2~3문장")
+        @JsonAlias({"answer", "comment", "추천사유"})
         String aiComment
 ) {
 }

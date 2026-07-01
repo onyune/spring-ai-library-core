@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.repository;
 
 import com.nhnacademy.springailibrarycore.book.domain.BookSearchCache;
+import com.nhnacademy.springailibrarycore.book.domain.SearchType;
 import java.util.Optional;
 
 /**
@@ -12,6 +13,7 @@ import java.util.Optional;
 public interface BookSearchCacheRepositoryCustom {
 
     Optional<BookSearchCache> findBestMatch(
+            SearchType searchType,
             float[] queryEmbedding,
             double similarityThreshold
     );
