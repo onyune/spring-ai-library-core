@@ -33,7 +33,7 @@
                     <!-- 검색 방식 -->
                     <div class="search-col-type">
                         <label class="form-label">검색 방식</label>
-                        <select name="searchType" class="form-select">
+                        <select name="searchType" id="searchTypeSelect" class="form-select">
                             <option value="KEYWORD"
                                     th:selected="${request != null && request.searchType == T(com.nhnacademy.springailibrarycore.book.domain.SearchType).KEYWORD}">
                                 키워드
@@ -60,8 +60,8 @@
                     <!-- 키워드 -->
                     <div class="search-col-keyword">
                         <label class="form-label">검색 키워드</label>
-                        <input type="text" name="keyword" class="form-control"
-                               placeholder="제목, 저자, 내용 키워드 또는 질문..."
+                        <input type="text" id="searchInput" name="keyword" class="form-control"
+                               placeholder="자유롭게 단어나 문장으로 질문해보세요! (예: 스프링 부트 동작 원리)"
                                th:value="${request != null ? request.keyword : ''}" required>
                     </div>
 
@@ -213,6 +213,25 @@
                 document.getElementById('loadingOverlay').classList.add('active');
             }
         });
+
+        // 검색 방식별 팁(Placeholder) 동적 변경 로직
+        const searchTypeSelect = document.getElementById('searchTypeSelect');
+        const searchInput = document.getElementById('searchInput');
+
+        function updatePlaceholder() {
+            const type = searchTypeSelect.value;
+            if (type === 'KEYWORD') {
+                searchInput.placeholder = "정확한 책 제목이나 저자 이름, 출판사를 입력해보세요. (예: 자바의 정석)";
+            } else if (type === 'RAG') {
+                searchInput.placeholder = "원하는 기술이나 상황을 문장으로 적어주세요! (예: 비전공자가 읽기 좋은 파이썬 입문서)";
+            } else {
+                searchInput.placeholder = "자유롭게 단어나 문장으로 질문해보세요! (예: 스프링 부트 시큐리티 동작 원리)";
+            }
+        }
+
+        searchTypeSelect.addEventListener('change', updatePlaceholder);
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', updatePlaceholder);
     </script>
 
 </div>

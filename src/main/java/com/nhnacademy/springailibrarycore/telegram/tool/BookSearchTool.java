@@ -24,6 +24,7 @@ public class BookSearchTool {
             @ToolParam(description = "사용자의 도서 추천 및 검색 의도인 부분만 그대로 발췌합니다.") String query,
             @ToolParam(description = "사용자의 채팅방 ID (chatId)") Long chatId
     ) {
+        log.info("[BookSearchTool] telegram이 bookSearch를 시작했습니다.");
         // SearchType.RAG로 요청 생성
         BookSearchRequest request = new BookSearchRequest(query, null, SearchType.RAG, null, chatId);
 
