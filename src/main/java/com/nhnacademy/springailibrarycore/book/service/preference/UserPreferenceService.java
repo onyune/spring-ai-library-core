@@ -22,7 +22,7 @@ public class UserPreferenceService {
      * @return 책 아이디 당 유사도
      */
     public Map<Long, Double> getPersonalizationScores(List<Long> candidateBookIds, Long chatId) {
-        float[] userVector = userPreferenceVectorService.getUserPreferenceVector(chatId);
+        float[] userVector = userPreferenceVectorService.getUserPreferenceVector(chatId).getVector();
         if (userVector == null || userVector.length == 0) {
             return java.util.Collections.emptyMap();
         }
