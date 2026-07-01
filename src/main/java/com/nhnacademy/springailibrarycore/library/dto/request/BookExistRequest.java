@@ -14,7 +14,9 @@ import org.springframework.util.MultiValueMap;
 @Builder
 public record BookExistRequest(
         String libCode,
-        String isbn13
+        String libName,
+        String isbn13,
+        String bookTitle
 ) {
 
     public MultiValueMap<String, String> toQueryParams() {

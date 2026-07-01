@@ -1,7 +1,6 @@
 package com.nhnacademy.springailibrarycore.telegram.agent;
 
-import com.nhnacademy.springailibrarycore.library.mcp.LibrarySearchTool;
-import com.nhnacademy.springailibrarycore.library.mcp.PopularBookSearchTool;
+import com.nhnacademy.springailibrarycore.library.mcp.*;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskRequest;
 import com.nhnacademy.springailibrarycore.telegram.dto.AskResponse;
 import com.nhnacademy.springailibrarycore.telegram.tool.BookSearchTool;
@@ -26,7 +25,14 @@ public class AiLibraryAssistantAgent {
             @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
             PopularBookSearchTool popularBookSearchTool,
             LibrarySearchTool librarySearchTool,
-            BookSearchTool bookSearchTool
+            BookSearchTool bookSearchTool,
+            MultipleBookLoanAvailabilityTool multipleBookLoanAvailabilityTool,
+            BookManiaTool bookManiaTool,
+            BookDetailTool bookDetailTool,
+            BookUsageAnalysisTool bookUsageAnalysisTool,
+            MonthlyKeywordTool monthlyKeywordTool,
+            NewArrivalBookTool newArrivalBookTool,
+            LibPopularBookTool libPopularBookTool
     ) {
         this.chatClient = chatClientBuilder.defaultSystem("""
                         당신은 NHN 도서관의 친절하고 전문적인 AI 사서입니다.
@@ -53,7 +59,16 @@ public class AiLibraryAssistantAgent {
                         3. 두 가지를 동시에 물어본 경우:
                            - 일반 정보 답변 항목(bookId: null)과 도서 추천 답변 항목(bookId: 숫자)들을 하나의 배열에 모두 포함해서 반환하세요.
                         """)
-                .defaultTools(popularBookSearchTool, librarySearchTool, bookSearchTool)
+                .defaultTools(popularBookSearchTool,
+                        librarySearchTool,
+                        bookSearchTool,
+                        multipleBookLoanAvailabilityTool,
+                        bookManiaTool,
+                        bookDetailTool,
+                        bookUsageAnalysisTool,
+                        monthlyKeywordTool,
+                        newArrivalBookTool,
+                        libPopularBookTool)
                 .build();
     }
 

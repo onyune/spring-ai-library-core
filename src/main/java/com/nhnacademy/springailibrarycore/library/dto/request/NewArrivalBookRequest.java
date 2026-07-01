@@ -15,6 +15,7 @@ import org.springframework.util.MultiValueMap;
 @Builder
 public record NewArrivalBookRequest(
         String libCode,
+        String libName,
         String searchDt // yyyy-MM
 ) {
     public MultiValueMap<String, String> toQueryParams() {
