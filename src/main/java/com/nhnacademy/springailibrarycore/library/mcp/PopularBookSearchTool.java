@@ -3,6 +3,7 @@ package com.nhnacademy.springailibrarycore.library.mcp;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruBookInfo;
 import com.nhnacademy.springailibrarycore.library.dto.request.PopularBooksSearchRequest;
 import com.nhnacademy.springailibrarycore.library.service.agent.PopularBookSearchCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,7 @@ import java.util.List;
 public class PopularBookSearchTool {
 
     private final PopularBookSearchCoordinator popularBookSearchCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(
         description = "전국의 도서관 빅데이터를 기반으로 인기대출 도서 목록을 조회합니다. 자연어 조건(성별, 연령대, 대출기간, 지역, 주제분류 등)을 코드로 자동 변환하여 정밀한 인기 도서 순위를 제공합니다."
@@ -54,17 +56,24 @@ public class PopularBookSearchTool {
                     .build();
 
             List<NaruBookInfo> list = popularBookSearchCoordinator.search(request);
+            log.info("[Tool] searchPopularBooks 결과 목록 크기: {}", (list != null ? list.size() : "null"));
 
-            if (list.isEmpty()) {
-                return "조건에 만족하는 인기 도서 검색 결과가 없습니다.";
+            if (list == null || list.isEmpty()) {
+                log.warn("[Tool] searchPopularBooks 결과 목록이 비어있어 FAIL 반환");
+                return "FAIL: 조건에 만족하는 인기 도서 검색 결과가 없습니다.";
             }
 
             StringBuilder result = getResult(list);
+            String report = result.toString();
 
-            return result.toString();
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            return "SUCCESS: 인기 도서 검색이 완료되었습니다. (도서 수: " + list.size() + ")";
+
         } catch (Exception e) {
             log.error("[Tool] searchPopularBooks 실패", e);
-            return "인기 도서 목록을 조회하는 도중 예외가 발생했습니다: " + e.getMessage();
+            return "FAIL: 인기 도서 목록을 조회하는 도중 예외가 발생했습니다.";
         }
     }
 
@@ -74,7 +83,6 @@ public class PopularBookSearchTool {
         sb.append("📚 **인기 대출 도서 검색 결과:**\n\n");
 
         for (NaruBookInfo book : list) {
-            // ranking이나 no 번호 노출
             String rank = book.ranking() != null ? book.ranking() : (book.no() != null ? String.valueOf(book.no()) : "-");
             Integer loans = book.loanCount() != null ? book.loanCount() : (book.loanCnt() != null ? book.loanCnt() : 0);
 

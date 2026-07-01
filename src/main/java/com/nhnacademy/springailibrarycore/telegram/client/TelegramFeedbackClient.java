@@ -53,8 +53,10 @@ public class TelegramFeedbackClient {
         try {
             log.info("[FeedbackService] 도서 {}권에 대한 피드백 통계 Map 직접 조회 요청", bookIds.size());
 
+            String url = telegramRepositoryUrl + "/api/admin/feedback/books/stats";
+
             Map<Long, FeedbackStats> statsMap = restClient.post()
-                    .uri("/api/admin/feedback/books/stats")
+                    .uri(URI.create(url))
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(bookIds)
                     .retrieve()
