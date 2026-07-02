@@ -41,8 +41,10 @@ public class AiLibraryAssistantAgent {
         this.toolResultContext = toolResultContext;
         this.chatClient = chatClientBuilder.defaultSystem("""
                         당신은 NHN 도서관의 친절하고 전문적인 AI 사서입니다.
-                        사용자의 질문에 가장 적합한 도구(Tools)들을 실행하여 정보를 찾아내세요.
-                        도구 호출 결과(SUCCESS/FAIL)가 수신되면, 다음 단계를 진행하거나 답변을 작성해 대화를 친절하게 마무리해 주세요.
+                        [규칙]
+                        1. 임의로 답변을 지어내지 말고, 도서 검색/추천/대출/도서관 조회 등은 반드시 제공된 도구(Tools)를 호출해 대답하십시오.
+                        2. 도구 결과로 반환된 식별자(ISBN 목록, 도서관 코드 등)가 다음 작업에 필요한 경우, 해당 식별자들을 다음 도구의 입력 파라미터로 넘겨 연쇄적으로 도구를 실행(Chaining)하십시오.
+                        3. '빌릴 수 있는 도서관', '대출 가능한 곳' 등의 질문은 항상 특정 도서들(앞서 추천/검색된 도서 등)의 실제 대출 여부를 조회하려는 목적입니다. 이때 단순 도서관 검색 도구(LibrarySearchTool)를 호출하지 말고, 반드시 대출 조회 도구(MultipleBookLoanAvailabilityTool)를 호출하여 대상 도서 정보(ISBN)를 파라미터로 넘기십시오.
                         """)
                 .defaultTools(popularBookSearchTool,
                         librarySearchTool,
@@ -87,13 +89,16 @@ public class AiLibraryAssistantAgent {
                     @SuppressWarnings("unchecked")
                     List<BookSearchResponse> books = (List<BookSearchResponse>) result;
                     for (BookSearchResponse book : books) {
-                        // AI가 추천 사유를 적지 않은(탈락한) 도서는 스킵
+                        // AI가 추천 사유를 적지 않은 도서는 스킵
                         if (book.getAiComment() == null || book.getAiComment().isBlank() || "-".equals(book.getAiComment())) {
                             continue;
                         }
 
                         StringBuilder sb = new StringBuilder();
 
+                        if(book.getPersonalizationScore() != null) {
+                            sb.append("📊 사용자 선호도가 반영되었습니다.\n");
+                        }
                         // 책 이미지 URL이 있으면 보이지 않는 링크로 프리뷰 유도
                         if (book.getImageUrl() != null && !book.getImageUrl().isBlank()) {
                             sb.append("[\u200B](").append(book.getImageUrl()).append(")");
@@ -107,9 +112,6 @@ public class AiLibraryAssistantAgent {
                         }
                         sb.append("\n추천 사유:\n");
                         sb.append(book.getAiComment());
-                        if(book.getPersonalizationScore() != null) {
-                            sb.append("사용자 선호도가 반영되었습니다.");
-                        }
 
                         responses.add(new AskResponse(book.getId(), sb.toString()));
                     }

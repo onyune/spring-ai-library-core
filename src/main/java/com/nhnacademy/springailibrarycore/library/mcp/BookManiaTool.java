@@ -68,7 +68,9 @@ public class BookManiaTool {
             // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
             toolResultContext.addResult(report);
 
-            return "SUCCESS: 마니아 추천 도서 조회가 완료되었습니다.";
+            List<String> isbns = books.stream().limit(5).map(NaruBookInfo::isbn13).toList();
+
+            return "SUCCESS: 마니아 추천 도서 검색 완료. 추천 도서 ISBN 목록: " + isbns;
 
         } catch (Exception e) {
             log.error("[Tool] getManiaRecommendations 실패", e);

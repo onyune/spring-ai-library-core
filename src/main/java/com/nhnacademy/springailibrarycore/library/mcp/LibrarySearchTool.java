@@ -68,7 +68,11 @@ public class LibrarySearchTool {
             // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
             toolResultContext.addResult(report);
 
-            return "SUCCESS: 도서관 검색이 완료되었습니다. (도서관 수: " + list.size() + ")";
+            List<String> libSummary = resultList.stream()
+                    .map(lib -> String.format("%s (코드: %s)", lib.libName(), lib.libCode()))
+                    .toList();
+
+            return "SUCCESS: 도서관 검색 완료. 도서관 목록: " + libSummary;
 
         } catch (Exception e) {
             log.error("[Tool] searchLibraries 실패", e);

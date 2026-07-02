@@ -26,6 +26,13 @@ public class BookIsbnAgent {
 
         String trimTitle = bookTitle.trim();
 
+        // 입력받은 값이 이미 하이픈을 제외했을 때 10자리 혹은 13자리 숫자(ISBN)인 경우, 조회 없이 즉시 반환
+        String cleanIsbn = trimTitle.replaceAll("-", "");
+        if (cleanIsbn.matches("\\d{10}|\\d{13}")) {
+            log.info("[BookIsbnAgent] 입력된 값 자체가 유효한 ISBN 식별자입니다: {}", cleanIsbn);
+            return cleanIsbn;
+        }
+
         Optional<Book> dbBook  = bookRepository.findFirstByTitleContaining(trimTitle);
 
         if(dbBook.isPresent() && dbBook.get().getIsbn() != null && !dbBook.get().getIsbn().isBlank()) {
@@ -57,6 +64,37 @@ public class BookIsbnAgent {
             log.error("[BookIsbnAgent] 외부 API 조회 중 예외 발생: {}", trimTitle, e);
         }
         log.warn("[BookIsbnAgent] 해당 도서의 ISBN을 찾을 수 없습니다: {}", trimTitle);
+        return null;
+    }
+
+    public String getBookTitle(String isbn) {
+        if (isbn == null || isbn.isBlank()) {
+            return null;
+        }
+
+        String cleanIsbn = isbn.trim().replaceAll("-", "");
+
+        // 내부 DB 조회
+        Optional<Book> dbBook = bookRepository.findByIsbn(cleanIsbn);
+        if (dbBook.isPresent()) {
+            return dbBook.get().getTitle();
+        }
+
+        // 외부 정보나루 API 조회
+        log.info("[BookIsbnAgent] DB 미스로 인해 외부 정보나루 API에서 제목 검색을 시도합니다: {}", cleanIsbn);
+        try {
+            BookSearchRequest apiRequest = BookSearchRequest.builder()
+                    .isbn13(cleanIsbn)
+                    .pageSize(1)
+                    .build();
+
+            List<NaruBookInfo> apiResults = libraryNaruService.searchBooks(apiRequest);
+            if (apiResults != null && !apiResults.isEmpty()) {
+                return apiResults.getFirst().bookname();
+            }
+        } catch (Exception e) {
+            log.error("[BookIsbnAgent] 외부 API로 제목 조회 중 예외 발생: {}", cleanIsbn, e);
+        }
         return null;
     }
 }

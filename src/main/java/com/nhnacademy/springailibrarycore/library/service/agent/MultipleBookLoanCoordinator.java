@@ -91,13 +91,22 @@ public class MultipleBookLoanCoordinator {
         // 각 책 제목별로 병렬 소장 확인 진행
         for (String title : bookTitles) {
             String trimmedTitle = title.trim();
-            report.append(String.format("📖 **[%s]**\n", trimmedTitle));
 
             String isbn13 = bookIsbnAgent.getIsbn(trimmedTitle);
             if (isbn13 == null || isbn13.isBlank()) {
+                report.append(String.format("📖 **[%s]**\n", trimmedTitle));
                 report.append("  - ⚠️ 도서 ISBN을 조회할 수 없어 확인 불가\n\n");
                 continue;
             }
+
+            // 입력값(ISBN 또는 임의 텍스트)으로부터 실제 도서명을 복구하여 헤더에 출력
+            String displayTitle = trimmedTitle;
+            String resolvedTitle = bookIsbnAgent.getBookTitle(isbn13);
+            if (resolvedTitle != null && !resolvedTitle.isBlank()) {
+                displayTitle = resolvedTitle;
+            }
+
+            report.append(String.format("📖 **[%s]**\n", displayTitle));
 
             // 병렬 조회 (CompletableFuture)
             List<CompletableFuture<String>> futures = targetLibraries.stream()

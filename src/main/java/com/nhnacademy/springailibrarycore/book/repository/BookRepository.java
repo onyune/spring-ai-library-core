@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface BookRepository extends JpaRepository<Book, Long>, BookRepositoryCustom {
 
     Optional<Book> findFirstByTitleContaining(String trimTitle);
+
+    Optional<Book> findByIsbn(String isbn);
 }

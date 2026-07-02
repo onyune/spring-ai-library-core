@@ -39,7 +39,13 @@ public class BookSearchTool {
         // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
         toolResultContext.addResult(books);
 
-        // LLM에게는 초경량 상태값만 반환
-        return "SUCCESS: 도서 검색이 완료되었습니다. (검색된 도서 수: " + books.size() + ")";
+        // AI가 최종 추천한 책들(aiComment가 달린 도서)만 필터링하여 ISBN 목록 추출
+        List<String> recommendedIsbns = books.stream()
+                .filter(book -> book.getAiComment() != null && !book.getAiComment().isBlank() && !"-".equals(book.getAiComment()))
+                .map(BookSearchResponse::getIsbn)
+                .toList();
+
+        // LLM에게 추천된 도서 ISBN 목록을 포함하여 반환 (체이닝 유도)
+        return "SUCCESS: 도서 추천 완료. 추천 도서 ISBN 목록: " + recommendedIsbns;
     }
 }
