@@ -1,15 +1,10 @@
 package com.nhnacademy.springailibrarycore.library.service.agent;
 
 import com.nhnacademy.springailibrarycore.library.dto.LibrarySearchResponse.LibraryInfo;
+import com.nhnacademy.springailibrarycore.library.dto.common.codes.DetailRegion;
+import com.nhnacademy.springailibrarycore.library.dto.common.codes.Region;
 import com.nhnacademy.springailibrarycore.library.dto.request.LibrarySearchRequest;
 import com.nhnacademy.springailibrarycore.library.service.LibraryNaruService;
-import com.nhnacademy.springailibrarycore.library.dto.common.codes.Region;
-import com.nhnacademy.springailibrarycore.library.dto.common.codes.DetailRegion;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
 /**
  * 도서관 상세 정보를 메모리에 캐시하고,
@@ -37,10 +35,10 @@ public class LibrarySearchAgent {
     // 전체 도서관 리스트 (지역 필터링 및 전체 조회용)
     private final List<LibraryInfo> libraryList = new CopyOnWriteArrayList<>();
 
-    @PostConstruct
-    public void init() {
-        refreshCache();
-    }
+//    @PostConstruct
+////    public void init() {
+////        refreshCache();
+////    }
 
     /**
      * 전체 도서관 정보를 오픈 API로부터 수집하여 캐시를 채우고,

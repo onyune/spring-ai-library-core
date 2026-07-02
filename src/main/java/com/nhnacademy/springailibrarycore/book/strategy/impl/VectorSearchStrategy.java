@@ -59,31 +59,36 @@ public class VectorSearchStrategy implements SearchStrategy {
                 queryVector
         );
 
+        List<BookSearchResponse> list;
+
         if (cachedResult.isPresent()) {
-            List<BookSearchResponse> list = cachedResult.get();
-            return BookSearchPageResult.paginate(list, pageable);
-        }
-
-        BookSearchRequest dbRequest = new BookSearchRequest(
-                keyword,
-                request.isbn(),
-                SearchType.VECTOR,
-                queryVector,
-                request.chatId()
-        );
-        log.info("[VectorSearchStrategy] 벡터 서치 시작 - keyword: {}", keyword);
-        BookSearchPageResult result = bookRepository.vectorSearch(pageable, dbRequest);
-
-        /* ============ 결과를 시맨틱 캐시에 저장 (첫 페이지 또는 전체 결과를 캐싱할지 결정 필요, 임시로 현재 결과 저장) ============*/
-        if (!result.getContent().isEmpty() && pageable.getPageNumber() == 0) {
-            semanticCacheService.save(
-                    SearchType.VECTOR,
+            list = cachedResult.get();
+        } else {
+            // 캐시 미스 시, 넉넉한 후보(예: 100개)를 DB에서 가져와 캐시에 전체 저장
+            Pageable candidatePage = org.springframework.data.domain.PageRequest.of(0, 100);
+            BookSearchRequest dbRequest = new BookSearchRequest(
                     keyword,
+                    request.isbn(),
+                    SearchType.VECTOR,
                     queryVector,
-                    result.getContent()
+                    request.chatId()
             );
+            log.info("[VectorSearchStrategy] 벡터 서치 시작 - keyword: {}", keyword);
+            BookSearchPageResult candidateResult = bookRepository.vectorSearch(candidatePage, dbRequest);
+            list = candidateResult.getContent();
+
+            /* ============ 결과를 시맨틱 캐시에 전체 리스트 저장 ============*/
+            if (!list.isEmpty()) {
+                semanticCacheService.save(
+                        SearchType.VECTOR,
+                        keyword,
+                        queryVector,
+                        list
+                );
+            }
         }
 
-        return result;
+        // 가져온 전체 리스트를 기반으로 인메모리 페이징 처리
+        return BookSearchPageResult.paginate(list, pageable);
     }
 }

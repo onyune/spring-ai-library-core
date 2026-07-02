@@ -158,7 +158,7 @@ public class RrfBookReranker {
                 .filter(book -> book.getRrfScore() != null)
                 .sorted(Comparator.comparing(BookSearchResponse::getRrfScore).reversed())
                 .toList();
-        // ----------- rrf 점수 하한선 이상으로 5개만 추출 -----------
+        // ----------- rrf 점수 하한선 이상으로 추출 -----------
         List<BookSearchResponse> topBooks = rankedBooks.stream()
                 .filter(book -> book.getRrfScore() >= rrfScoreThreshold)
                 .limit(businessFilterK)
