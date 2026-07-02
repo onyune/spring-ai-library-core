@@ -2,6 +2,7 @@ package com.nhnacademy.springailibrarycore.library.mcp;
 
 import com.nhnacademy.springailibrarycore.library.dto.LibrarySearchResponse.LibraryInfo;
 import com.nhnacademy.springailibrarycore.library.service.agent.LibrarySearchCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -16,6 +17,7 @@ import java.util.List;
 public class LibrarySearchTool {
 
     private final LibrarySearchCoordinator librarySearchCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(
         description = "도서관 목록 또는 특정 도서관의 상세 정보(운영시간, 주소, 연락처, 휴관일)를 조회합니다."
@@ -34,7 +36,7 @@ public class LibrarySearchTool {
             List<LibraryInfo> list = librarySearchCoordinator.search(libraryName, regionName, dtlRegionName, libCode);
 
             if (list.isEmpty()) {
-                return "검색된 도서관이 없습니다.";
+                return "FAIL: 검색된 도서관이 없습니다.";
             }
 
             // 토큰 절약 을 위해 마크다운 문자열로 가공
@@ -61,11 +63,20 @@ public class LibrarySearchTool {
                 sb.append(String.format("\n*...외 %d개의 도서관이 더 있습니다. 특정 도서관명을 더 자세히 질문해 주세요.*", list.size() - 10));
             }
 
-            return sb.toString();
+            String report = sb.toString();
+
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            List<String> libSummary = resultList.stream()
+                    .map(lib -> String.format("%s (코드: %s)", lib.libName(), lib.libCode()))
+                    .toList();
+
+            return "SUCCESS: 도서관 검색 완료. 도서관 목록: " + libSummary;
 
         } catch (Exception e) {
             log.error("[Tool] searchLibraries 실패", e);
-            return "도서관 정보를 조회하는 도중 에러가 발생했습니다.";
+            return "FAIL: 도서관 정보를 조회하는 도중 예외가 발생했습니다.";
         }
     }
 }

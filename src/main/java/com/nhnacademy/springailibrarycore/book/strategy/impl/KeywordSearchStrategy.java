@@ -37,18 +37,19 @@ public class KeywordSearchStrategy implements SearchStrategy {
             BookSearchRequest request
     ) {
         String rawKeyword = request.keyword();
-        
+
         // 불용어 제거 및 핵심 명사 추출
         String extractedKeyword = queryAnalyzerSubAgent.extractKeywords(rawKeyword);
-        
+
         // 정제된 키워드로 새로운 DTO 생성
         BookSearchRequest refinedRequest = new BookSearchRequest(
                 extractedKeyword,
                 request.isbn(),
                 request.searchType(),
-                request.vector()
+                request.vector(),
+                request.chatId()
         );
-        
+
         return bookRepository.search(pageable, refinedRequest);
     }
 }

@@ -65,9 +65,10 @@ public class RagSearchStrategy implements SearchStrategy {
                 normalizedQuestion,
                 request.isbn(),
                 request.searchType(),
-                questionVector
+                questionVector,
+                request.chatId()
         );
-        // --------------- RRF Rerank + Cohere API: 상위 최대 10권 추출 ---------------
+        // --------------- RRF Rerank + Cohere API: 상위 책 추출 ---------------
         List<BookSearchResponse> topBooks = rrfBookReranker.reranker(vectorizedRequest);
 
         if (topBooks.isEmpty()) {
@@ -75,7 +76,7 @@ public class RagSearchStrategy implements SearchStrategy {
             return new BookSearchPageResult(List.of(), 0);
         }
 
-        // ---------- AI 추천 사유 부여 최대 5권에 AI Comment 부여----------
+        // ---------- AI 추천 사유 부여----------
         List<BookSearchResponse> enrichedBooks = bookRecommendationAgent.enrich(normalizedQuestion, topBooks);
 
         /* ============ 결과를 캐시에 저장 ============*/

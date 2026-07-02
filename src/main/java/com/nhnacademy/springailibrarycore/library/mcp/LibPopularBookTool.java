@@ -5,6 +5,7 @@ import com.nhnacademy.springailibrarycore.library.dto.common.NaruWrapper;
 import com.nhnacademy.springailibrarycore.library.dto.request.LibPopularBooksRequest;
 import com.nhnacademy.springailibrarycore.library.dto.response.LibPopularBooksResponse;
 import com.nhnacademy.springailibrarycore.library.service.agent.LibPopularBookCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +21,7 @@ import java.util.List;
 public class LibPopularBookTool {
 
     private final LibPopularBookCoordinator libPopularBookCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(
             description = "특정 도서관 또는 지역 기준 인기대출 도서 목록을 조회합니다. 도서관명, 도서관 코드, 지역, 성별, 연령대, 주제분류 등의 조건을 코드로 변환하여 도서관/지역별 대출 순위를 제공합니다."
@@ -39,7 +41,6 @@ public class LibPopularBookTool {
             @ToolParam(description = "조회할 페이지 번호 (기본값: 1)", required = false) Integer pageNo,
             @ToolParam(description = "한 페이지에 표시할 도서 수 (기본값: 10)", required = false) Integer pageSize
     ){
-
         log.info("[Tool] LibPopularBooks 호출: libCode={},libName={}, dateRange={}, gender={}, age={}, region={}, dtlRegion={}, bookDvsn={}, addCode={}, kdc={}, dtlKdc={}",
                 libCode,libName,dateRange, gender, age, region, dtlRegion, bookDvsn, addCode, kdc, dtlKdc);
 
@@ -68,16 +69,22 @@ public class LibPopularBookTool {
                     : List.of();
 
             if(list.isEmpty()){
-                return "조건에 만족하는 도서관 / 지역별 인기 도서가 없습니다.";
+                return "FAIL: 조건에 만족하는 도서관 / 지역별 인기 도서가 없습니다.";
             }
 
             StringBuilder result = getLibResult(response, list);
+            String report = result.toString();
 
-            return result.toString();
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            List<String> isbns = list.stream().limit(5).map(NaruBookInfo::isbn13).toList();
+
+            return "SUCCESS: 도서관/지역별 인기 도서 검색 완료. 인기 도서 ISBN 목록: " + isbns;
 
         }catch (Exception e){
             log.error("[Tool] libPopularBooks 실패", e);
-            return "도서관 / 지역별 인기 도서 목록을 조회하는 도중 예외가 발생했습니다: " +  e.getMessage();
+            return "FAIL: 도서관 / 지역별 인기 도서 목록을 조회하는 도중 예외가 발생했습니다.";
         }
     }
 

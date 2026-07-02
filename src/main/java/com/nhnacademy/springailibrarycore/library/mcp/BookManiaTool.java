@@ -2,6 +2,7 @@ package com.nhnacademy.springailibrarycore.library.mcp;
 
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruBookInfo;
 import com.nhnacademy.springailibrarycore.library.service.agent.BookManiaCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -15,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookManiaTool {
     private final BookManiaCoordinator bookManiaCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(description = "특정 도서와 함께 많이 빌리는 마니아 추천 도서를 조회합니다. 추천유형(type)은 mania로 고정됩니다.")
     public String getManiaRecommendations(
@@ -25,7 +27,7 @@ public class BookManiaTool {
         try {
             List<NaruBookInfo> books = bookManiaCoordinator.getManiaRecommendations(isbn13);
             if (books == null || books.isEmpty()) {
-                return "마니아 추천 도서가 없습니다.";
+                return "FAIL: 마니아 추천 도서가 없습니다.";
             }
 
             StringBuilder sb = new StringBuilder();
@@ -60,11 +62,19 @@ public class BookManiaTool {
                 }
                 sb.append(System.lineSeparator());
             });
-            return sb.toString();
+
+            String report = sb.toString();
+
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            List<String> isbns = books.stream().limit(5).map(NaruBookInfo::isbn13).toList();
+
+            return "SUCCESS: 마니아 추천 도서 검색 완료. 추천 도서 ISBN 목록: " + isbns;
+
         } catch (Exception e) {
             log.error("[Tool] getManiaRecommendations 실패", e);
-            return "마니아 추천 도서를 조회하는 중 오류가 발생했습니다.";
+            return "FAIL: 마니아 추천 도서를 조회하는 중 오류가 발생했습니다.";
         }
     }
-
 }

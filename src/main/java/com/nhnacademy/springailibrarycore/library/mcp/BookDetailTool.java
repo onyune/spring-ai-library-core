@@ -3,6 +3,7 @@ package com.nhnacademy.springailibrarycore.library.mcp;
 import com.nhnacademy.springailibrarycore.library.dto.common.NaruBookInfo;
 import com.nhnacademy.springailibrarycore.library.dto.response.NaruBookDetailResponse;
 import com.nhnacademy.springailibrarycore.library.service.agent.BookDetailCoordinator;
+import com.nhnacademy.springailibrarycore.telegram.tool.ToolResultContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.annotation.Tool;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BookDetailTool {
     private final BookDetailCoordinator detailCoordinator;
+    private final ToolResultContext toolResultContext;
 
     @Tool(description = "ISBN을 기준으로 도서의 상세 서지정보와 선택적인 대출 통계 정보를 조회합니다.")
     public String getBookDetail(
@@ -27,7 +29,7 @@ public class BookDetailTool {
             NaruBookDetailResponse.ResponseData detail =
                     detailCoordinator.getBookDetail(isbn13, loaninfoYn, displayInfo);
             if (detail == null || detail.detail() == null || detail.detail().book() == null) {
-                return "도서 상세 정보를 찾을 수 없습니다.";
+                return "FAIL: 도서 상세 정보를 찾을 수 없습니다.";
             }
             NaruBookInfo book = detail.detail().book();
             StringBuilder sb = new StringBuilder();
@@ -94,10 +96,16 @@ public class BookDetailTool {
                 }
             }
 
-            return sb.toString();
+            String report = sb.toString();
+
+            // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
+            toolResultContext.addResult(report);
+
+            return "SUCCESS: 도서 상세 정보 조회가 완료되었습니다.";
+
         } catch(Exception e) {
             log.error("[Tool] getBookDetail 실패", e);
-            return "도서 상세 정보를 조회하는 중 오류가 발생했습니다.";
+            return "FAIL: 도서 상세 정보를 조회하는 중 오류가 발생했습니다.";
         }
     }
 }

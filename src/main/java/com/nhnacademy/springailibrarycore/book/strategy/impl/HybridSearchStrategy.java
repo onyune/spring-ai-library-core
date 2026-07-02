@@ -72,16 +72,16 @@ public class HybridSearchStrategy implements SearchStrategy {
         float[] queryVector = request.vector() != null
                 ? request.vector()
                 : embeddingSubAgent.getEmbedding(keyword).getVector();
-                
+
         /* ============ 시맨틱 캐시 조회 (초기 단계) ============*/
         Optional<List<BookSearchResponse>> cachedResult = semanticCacheService.findCachedResult(
                 SearchType.HYBRID,
                 keyword,
                 queryVector
         );
-        
+
         List<BookSearchResponse> fusedList;
-        
+
         if (cachedResult.isPresent()) {
             fusedList = cachedResult.get();
         } else { // 캐싱된 결과가 없을 때 키워드 + 벡터 병렬 서치 후 rrf 검사
@@ -89,9 +89,10 @@ public class HybridSearchStrategy implements SearchStrategy {
                     keyword,
                     request.isbn(),
                     queryVector,
-                    candidatePage
+                    candidatePage,
+                    request.chatId()
             );
-            
+
             /* ============ 결과를 시맨틱 캐시에 저장 ============*/
             if (!fusedList.isEmpty()) {
                 semanticCacheService.save(
@@ -102,7 +103,6 @@ public class HybridSearchStrategy implements SearchStrategy {
                 );
             }
         }
-
         // ---------------- 페이징 처리 ----------------
         return BookSearchPageResult.paginate(fusedList, pageable);
     }
@@ -120,11 +120,12 @@ public class HybridSearchStrategy implements SearchStrategy {
             String keyword,
             String isbn,
             float[] queryVector,
-            Pageable candidatePage
+            Pageable candidatePage,
+            Long chatId
     ) {
         // ---------- KEYWORD 전략 (가상 스레드 기반 병렬 비동기 실행) -------------
         BookSearchRequest keywordRequest = new BookSearchRequest(
-                keyword, isbn, SearchType.KEYWORD, null
+                keyword, isbn, SearchType.KEYWORD, null,null
         );
         CompletableFuture<List<BookSearchResponse>> keywordFuture = CompletableFuture.supplyAsync(
                 () -> keywordSearchStrategy.search(candidatePage, keywordRequest).getContent(),
@@ -133,20 +134,20 @@ public class HybridSearchStrategy implements SearchStrategy {
 
         // ---------------- VECTOR 전략 (가상 스레드 기반 병렬 비동기 실행 + 4초 타임아웃/폴백) --------------
         BookSearchRequest vectorRequest = new BookSearchRequest(
-                keyword, isbn, SearchType.VECTOR, queryVector
+                keyword, isbn, SearchType.VECTOR, queryVector, chatId
         );
         CompletableFuture<List<BookSearchResponse>> vectorFuture = CompletableFuture.supplyAsync(
-                () -> vectorSearchStrategy.search(candidatePage, vectorRequest).getContent(),
-                virtualThreadExecutor
-        ).orTimeout(4, TimeUnit.SECONDS)
-         .exceptionally(ex -> {
-             log.warn("[Hybrid Search] 벡터 검색 4초 타임아웃 또는 예외 발생. 키워드 검색 결과만으로 Fallback 합니다.", ex);
-             return Collections.emptyList();
-         });
+                        () -> vectorSearchStrategy.search(candidatePage, vectorRequest).getContent(),
+                        virtualThreadExecutor
+                ).orTimeout(4, TimeUnit.SECONDS)
+                .exceptionally(ex -> {
+                    log.warn("[Hybrid Search] 벡터 검색 4초 타임아웃 또는 예외 발생. 키워드 검색 결과만으로 Fallback 합니다.", ex);
+                    return Collections.emptyList();
+                });
 
         // 두 작업이 모두 끝날 때까지 대기 (가장 느린 쿼리 시간, 최대 4초에 수렴)
         CompletableFuture.allOf(keywordFuture, vectorFuture).join();
-        
+
         return rrfFusionSubAgent.fuse(keywordFuture.join(), vectorFuture.join());
     }
 }
