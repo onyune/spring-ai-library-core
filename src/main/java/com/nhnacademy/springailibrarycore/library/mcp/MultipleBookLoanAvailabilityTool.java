@@ -19,10 +19,10 @@ public class MultipleBookLoanAvailabilityTool {
     private final ToolResultContext toolResultContext;
 
     @Tool(
-        description = "하나 또는 여러 권의 책에 대해 특정 도서관명 또는 특정 지역(시도/시군구) 내 대출 가능한 도서관 목록을 일괄 조회합니다."
+        description = "하나 또는 여러 권의 책(제목 또는 13자리 ISBN)에 대해 특정 도서관명 또는 특정 지역(시도/시군구) 내 대출 가능한 도서관 목록을 일괄 조회합니다."
     )
     public String checkMultipleBooksLoanAvailability(
-            @ToolParam(description = "대출 상태를 확인할 도서 제목 목록 (쉼표로 구분, 예: '토비의 스프링, 클린 코드')") String bookTitles,
+            @ToolParam(description = "대출 상태를 확인할 도서 제목 또는 13자리 ISBN 목록 (쉼표로 구분, 예: '9788981600600, 9788981600617' 혹은 '토비의 스프링, 클린 코드')") String bookTitles,
             @ToolParam(description = "조회 대상 특정 도서관 명칭 (예: '강남도서관', '마포평생학습관')", required = false) String libName,
             @ToolParam(description = "시도 행정구역 지역 명칭 (예: '서울', '경기도')", required = false) String regionName,
             @ToolParam(description = "시군구 상세지역 명칭 (선택, 예: '강남구', '분당구')", required = false) String dtlRegionName

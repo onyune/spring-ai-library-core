@@ -69,7 +69,9 @@ public class PopularBookSearchTool {
             // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
             toolResultContext.addResult(report);
 
-            return "SUCCESS: 인기 도서 검색이 완료되었습니다. (도서 수: " + list.size() + ")";
+            List<String> isbns = list.stream().limit(5).map(NaruBookInfo::isbn13).toList();
+
+            return "SUCCESS: 인기 도서 검색 완료. 인기 도서 ISBN 목록: " + isbns;
 
         } catch (Exception e) {
             log.error("[Tool] searchPopularBooks 실패", e);

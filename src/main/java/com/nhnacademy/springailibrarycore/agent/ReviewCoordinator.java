@@ -88,26 +88,42 @@ public class ReviewCoordinator {
         // 가장 최신 리뷰 ID 결정
         Long nextLatestReviewId = targetReviews.stream().mapToLong(Review::getId).max().orElse(lastProcessedId != null ? lastProcessedId : 0L);
 
-        // 5개씩 청크 분할 및 병렬 Map 요약 수행 (CompletableFuture)
-        List<List<Review>> chunks = partition(targetReviews, 5);
-        List<String> partialSummaries = summarizeChunksInParallel(chunks);
-        String combinedSummaries = String.join("\n\n---\n\n", partialSummaries);
+        String finalReport;
+        if (targetReviews.size() <= 20) {
+            // [최적화 - 단일 단계 요약] 20개 이하의 리뷰는 Map 단계를 건너뛰고 1턴의 LLM 호출로 직접 요약 단축
+            String reviewsText = buildChunkText(targetReviews);
+            String finalReportInput = reviewsText;
+            if (cachedResponse != null && cachedResponse.summaryText() != null) {
+                finalReportInput = String.format(
+                        "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 목록] ---\n%s",
+                        cachedResponse.summaryText(),
+                        reviewsText
+                );
+            }
+            log.info("[ReviewCoordinator] 단일 단계 직접 요약 수행 (리뷰 수: {}개, 1턴 호출)", targetReviews.size());
+            finalReport = reduceAgent.reduceSummaries(finalReportInput);
+        } else {
+            // [MapReduce 요약] 리뷰가 20개를 초과할 때만 분할하여 병렬 처리 진행 (2턴 호출)
+            // 청크 사이즈도 기존 5에서 10으로 늘려 불필요한 동시 호출 수 조율
+            List<List<Review>> chunks = partition(targetReviews, 10);
+            List<String> partialSummaries = summarizeChunksInParallel(chunks);
+            String combinedSummaries = String.join("\n\n---\n\n", partialSummaries);
 
-        // Reduce 단계 수행 (기존 캐시 요약본이 존재한다면 융합 처리)
-        String finalReportInput = combinedSummaries;
-        if (cachedResponse != null && cachedResponse.summaryText() != null) {
-            finalReportInput = String.format(
-                    "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 요약본] ---\n%s",
-                    cachedResponse.summaryText(),
-                    combinedSummaries
-            );
+            String finalReportInput = combinedSummaries;
+            if (cachedResponse != null && cachedResponse.summaryText() != null) {
+                finalReportInput = String.format(
+                        "--- [기존 요약 보고서] ---\n%s\n\n--- [추가된 신규 독자 리뷰 요약본] ---\n%s",
+                        cachedResponse.summaryText(),
+                        combinedSummaries
+                );
+            }
+            log.info("[ReviewCoordinator] MapReduce 분할 요약 수행 (리뷰 수: {}개, 청크 수: {}개, 2턴 호출)", targetReviews.size(), chunks.size());
+            finalReport = reduceAgent.reduceSummaries(finalReportInput);
         }
 
-        String finalReport = reduceAgent.reduceSummaries(finalReportInput);
-
-        // Redis 캐싱
+        // Redis 캐싱 (TTL 없이 영구 저장)
         ReviewSummaryResponse response = new ReviewSummaryResponse(bookId, ReviewStatus.DONE, finalReport, null, nextLatestReviewId);
-        redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response), Duration.ofDays(1));
+        redisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(response));
         log.info("[ReviewCoordinator] 요약 완료 및 캐시 업데이트 -> bookId: {}", bookId);
 
         return response;

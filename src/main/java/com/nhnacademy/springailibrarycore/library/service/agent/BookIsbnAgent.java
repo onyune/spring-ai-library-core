@@ -26,6 +26,13 @@ public class BookIsbnAgent {
 
         String trimTitle = bookTitle.trim();
 
+        // 입력받은 값이 이미 하이픈을 제외했을 때 10자리 혹은 13자리 숫자(ISBN)인 경우, 조회 없이 즉시 반환
+        String cleanIsbn = trimTitle.replaceAll("-", "");
+        if (cleanIsbn.matches("\\d{10}|\\d{13}")) {
+            log.info("[BookIsbnAgent] 입력된 값 자체가 유효한 ISBN 식별자입니다: {}", cleanIsbn);
+            return cleanIsbn;
+        }
+
         Optional<Book> dbBook  = bookRepository.findFirstByTitleContaining(trimTitle);
 
         if(dbBook.isPresent() && dbBook.get().getIsbn() != null && !dbBook.get().getIsbn().isBlank()) {

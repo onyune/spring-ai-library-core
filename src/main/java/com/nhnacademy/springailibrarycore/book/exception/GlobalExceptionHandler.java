@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @Slf4j
-@ControllerAdvice
+@ControllerAdvice(basePackages = "com.nhnacademy.springailibrarycore.front.controller")
 public class GlobalExceptionHandler {
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
