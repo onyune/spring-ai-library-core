@@ -32,7 +32,9 @@ public class BookSearchTool {
 
         // BookSearchAgent 실행
         BookSearchResult result = bookSearchAgent.searchBooks(PageRequest.of(0, 3), request);
-        List<BookSearchResponse> books = result.books().getContent();
+        List<BookSearchResponse> books = result.books().getContent().stream()
+                .limit(3)
+                .toList();
 
         // 실제 데이터를 RequestScope 컨텍스트에 임시 저장
         toolResultContext.addResult(books);

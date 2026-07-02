@@ -25,7 +25,7 @@ public class AiLibraryAssistantAgent {
     private final ToolResultContext toolResultContext;
 
     public AiLibraryAssistantAgent(
-            @Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClientBuilder,
+            @Qualifier("geminiChatClientBuilder") ChatClient.Builder chatClientBuilder,
             PopularBookSearchTool popularBookSearchTool,
             LibrarySearchTool librarySearchTool,
             BookSearchTool bookSearchTool,
