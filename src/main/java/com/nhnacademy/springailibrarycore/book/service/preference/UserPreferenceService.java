@@ -1,6 +1,7 @@
 package com.nhnacademy.springailibrarycore.book.service.preference;
 
 import com.nhnacademy.springailibrarycore.book.repository.BookRepository;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +25,7 @@ public class UserPreferenceService {
     public Map<Long, Double> getPersonalizationScores(List<Long> candidateBookIds, Long chatId) {
         float[] userVector = userPreferenceVectorService.getUserPreferenceVector(chatId).getVector();
         if (userVector == null || userVector.length == 0) {
-            return java.util.Collections.emptyMap();
+            return Collections.emptyMap();
         }
 
         // DB에서 candidateBookIds에 해당하는 도서 ID와 임베딩(float[])을 Map 형태로 가져옴

@@ -35,6 +35,11 @@ public class BookRepositoryImpl implements BookRepositoryCustom {
     }
 
     @Override
+    public List<com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse> findPersonalizedBooks(float[] vector, int limit) {
+        return vectorSearchRepository.findPersonalizedBooks(vector, limit);
+    }
+
+    @Override
     public List<float[]> findEmbeddingByBookIds(List<Long> bookIds) {
         return vectorSearchRepository.findEmbeddingsByBookIds(bookIds);
     }

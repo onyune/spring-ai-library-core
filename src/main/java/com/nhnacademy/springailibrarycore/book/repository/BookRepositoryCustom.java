@@ -14,6 +14,8 @@ public interface BookRepositoryCustom {
 
     BookSearchPageResult vectorSearch(Pageable pageable, BookSearchRequest request);
 
+    List<com.nhnacademy.springailibrarycore.book.dto.BookSearchResponse> findPersonalizedBooks(float[] vector, int limit);
+
     List<float[]> findEmbeddingByBookIds(List<Long> bookIds);
 
     java.util.Map<Long, float[]> findEmbeddingMapByBookIds(List<Long> bookIds);

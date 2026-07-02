@@ -44,7 +44,15 @@ public class VectorBookSearchRepository {
          * 1.0 -> 매우 유사
          * 0.0 -> 유사 X
          */
-        String vector = Arrays.toString(queryVector);
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < queryVector.length; i++) {
+            sb.append(String.format("%.6f", queryVector[i]));
+            if (i < queryVector.length - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+        String vector = sb.toString();
         NumberTemplate<Double> similarity = Expressions.numberTemplate(
                 Double.class,
                 "function('vector_cosine_similarity', {0})",
@@ -83,6 +91,44 @@ public class VectorBookSearchRepository {
                 .fetchOne();
 
         return new BookSearchPageResult(content, total == null ? 0 : total);
+    }
+
+    public List<BookSearchResponse> findPersonalizedBooks(float[] queryVector, int limit) {
+        if (queryVector == null || queryVector.length == 0) {
+            return Collections.emptyList();
+        }
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < queryVector.length; i++) {
+            sb.append(String.format("%.6f", queryVector[i]));
+            if (i < queryVector.length - 1) {
+                sb.append(",");
+            }
+        }
+        sb.append("]");
+        String vector = sb.toString();
+        NumberTemplate<Double> similarity = Expressions.numberTemplate(
+                Double.class,
+                "function('vector_cosine_similarity', {0})",
+                vector
+        );
+
+        return queryFactory
+                .select(new QBookSearchResponse(
+                        book.id,
+                        book.isbn,
+                        book.title,
+                        book.authorName,
+                        book.publisherName,
+                        book.price,
+                        book.imageUrl,
+                        book.bookContent,
+                        similarity
+                ))
+                .from(book)
+                .where(book.embedding.isNotNull()) // Threshold 검사 생략 (평균 벡터라 코사인 유사도가 상대적으로 낮음)
+                .orderBy(similarity.desc())
+                .limit(limit)
+                .fetch();
     }
 
     public List<float[]> findEmbeddingsByBookIds(List<Long> bookIds){
